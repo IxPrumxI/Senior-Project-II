@@ -154,3 +154,50 @@ footer {
   font-size: 0.85rem;
   color: var(--muted);
 }
+
+/* ==========================================================
+   7. LOGIN / REGISTER BUTTONS
+   ========================================================== */
+
+/* Position the button group in the top-right corner of the page */
+.auth-buttons {
+  position: absolute;
+  top: calc(20px + env(safe-area-inset-top, 0px));
+  right: 24px;
+  display: flex;
+  gap: 10px;                          /* space between the two buttons */
+}
+
+/* Shared style for both buttons */
+.btn {
+  padding: 10px 22px;
+  border-radius: 8px;                 /* rounded corners */
+  border: 2px solid var(--ink);
+  font-family: inherit;               /* use the same font as the page */
+  font-size: 0.9rem;
+  font-weight: 600;
+  text-decoration: none;              /* remove the link underline */
+  cursor: pointer;
+  transition: opacity 0.2s;           /* smooth change on hover */
+}
+
+/* Login: transparent with an outline */
+.btn-outline {
+  background: transparent;
+  color: var(--ink);
+}
+
+/* Register: filled, so it stands out as the main action */
+.btn-solid {
+  background: var(--ink);
+  color: var(--bg);
+}
+
+/* When the mouse is over a button, make it slightly lighter */
+.btn:hover { opacity: 0.8; }
+
+/* Shows an outline when using the keyboard (important for accessibility) */
+.btn:focus-visible {
+  outline: 3px solid var(--accent);
+  outline-offset: 2px;
+}
