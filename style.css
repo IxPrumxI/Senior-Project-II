@@ -1,0 +1,156 @@
+/* ==========================================================
+   1. COLORS AND SETTINGS
+   Colors are stored as variables, so you can change them
+   in one place and the whole page updates.
+   ========================================================== */
+:root {
+  box-sizing: border-box;
+
+  /* Keeps content away from phone notches and system bars */
+  padding-top: env(safe-area-inset-top, 0px);
+  padding-bottom: env(safe-area-inset-bottom, 0px);
+
+  --bg: #d5d7da;      /* page background (grey) */
+  --ink: #22262b;     /* main text and logo color */
+  --muted: #555b63;   /* softer text color */
+  --line: #b4b8bd;    /* thin lines above the features */
+  --accent: #f2a900;  /* yellow of the lightning bolt */
+}
+
+/* If the visitor's device uses dark mode, switch to a darker grey */
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #3a3d42;
+    --ink: #f1f2f3;
+    --muted: #b9bdc3;
+    --line: #555a61;
+  }
+}
+
+/* Make every element include padding and border in its width */
+*, *::before, *::after {
+  box-sizing: inherit;
+}
+
+/* ==========================================================
+   2. PAGE LAYOUT
+   Flexbox is used to put everything in the center of the screen.
+   ========================================================== */
+body {
+  margin: 0;
+  min-height: 100vh;                 /* at least the full screen height */
+  background: var(--bg);             /* grey background */
+  color: var(--ink);
+  font-family: 'Sora', system-ui, -apple-system, 'Segoe UI', Arial, sans-serif;
+
+  display: flex;
+  flex-direction: column;            /* stack items from top to bottom */
+  align-items: center;               /* center horizontally */
+  justify-content: center;           /* center vertically */
+
+  padding: 48px 24px;
+  text-align: center;
+}
+
+/* The content block: limited width so text stays easy to read */
+main {
+  width: 100%;
+  max-width: 760px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+/* ==========================================================
+   3. LOGO
+   ========================================================== */
+.logo {
+  /* Size changes with screen width, but stays between 150px and 210px */
+  width: clamp(150px, 28vw, 210px);
+  height: auto;
+  cursor: pointer;                   /* hand cursor, because clicking replays the animation */
+}
+
+/* Each bar grows upward from its bottom edge when the page loads */
+.logo .bar {
+  transform-origin: 50% 100%;
+  animation: grow 0.9s cubic-bezier(0.2, 0.8, 0.2, 1) both;
+}
+
+/* Start each bar slightly later so they grow one after another */
+.logo .bar:nth-of-type(2) { animation-delay: 0.1s; }
+.logo .bar:nth-of-type(3) { animation-delay: 0.2s; }
+.logo .bar:nth-of-type(4) { animation-delay: 0.3s; }
+
+/* The animation itself: from flat (0) to full height (1) */
+@keyframes grow {
+  from { transform: scaleY(0); }
+  to   { transform: scaleY(1); }
+}
+
+/* Respect visitors who turned off animations in their device settings */
+@media (prefers-reduced-motion: reduce) {
+  .logo .bar { animation: none; }
+}
+
+/* ==========================================================
+   4. TEXT
+   ========================================================== */
+h1 {
+  margin: 28px 0 10px;
+  font-size: clamp(2rem, 6vw, 3rem); /* responsive title size */
+  font-weight: 700;
+  letter-spacing: -0.02em;
+}
+
+.tag {
+  margin: 0;
+  font-size: clamp(1rem, 2.4vw, 1.2rem);
+  font-weight: 300;
+  color: var(--muted);
+  max-width: 34em;                   /* keeps lines from getting too long */
+  line-height: 1.6;
+}
+
+/* ==========================================================
+   5. FEATURES LIST
+   ========================================================== */
+ul {
+  list-style: none;                  /* remove bullet points */
+  margin: 44px 0 0;
+  padding: 0;
+  display: flex;
+  flex-wrap: wrap;                   /* items drop to the next line on small screens */
+  justify-content: center;
+  gap: 12px 40px;
+  width: 100%;
+}
+
+li {
+  flex: 1 1 200px;
+  max-width: 230px;
+  padding-top: 14px;
+  border-top: 2px solid var(--line); /* thin line above each feature */
+}
+
+li strong {
+  display: block;
+  font-size: 1rem;
+  font-weight: 600;
+  margin-bottom: 6px;
+}
+
+li span {
+  font-size: 0.9rem;
+  line-height: 1.55;
+  color: var(--muted);
+}
+
+/* ==========================================================
+   6. FOOTER
+   ========================================================== */
+footer {
+  margin-top: 56px;
+  font-size: 0.85rem;
+  color: var(--muted);
+}
