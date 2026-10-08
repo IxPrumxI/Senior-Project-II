@@ -1,0 +1,63 @@
+<!--
+This is our Senior Project II for the Smart Electricity System, for our graduation from Saudi Electronic University.
+
+The members:
+S220010446 - Mahdy Fraish
+S220042003 - Ziyad Al Saleh
+S230005370 - Jafar Al Qahtani
+S230040284 - Mohammed Al Meatiq
+S230041499 - Waleed Al Ageel
+
+Project Supervisor:
+Hamed Alsufyani
+
+Pages:
+1. Home Page
+2. Register/Login Page
+3. Dashboard (insert, visualize, compare consumption, predict next bill)
+-->
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <title>Senior Project II – Smart Electricity System</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Sora:wght@300;400;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="style.css">
+</head>
+
+<body>
+  <main>
+    <nav class="auth-buttons">
+      <a href="login.html" class="btn btn-outline">Login</a>
+      <a href="register.html" class="btn btn-solid">Register</a>
+    </nav>
+
+    <!-- LOGO: a circle, four bars (consumption) and a lightning bolt (electricity). -->
+    <svg class="logo" viewBox="0 0 200 200" role="img" aria-label="Senior Project II logo">
+      <circle cx="100" cy="100" r="92" fill="none" stroke="var(--ink)" stroke-width="8"/>
+      <rect class="bar" x="46"  y="124" width="16" height="30" rx="3" fill="var(--ink)" opacity=".45"/>
+      <rect class="bar" x="70"  y="112" width="16" height="42" rx="3" fill="var(--ink)" opacity=".6"/>
+      <rect class="bar" x="114" y="100" width="16" height="54" rx="3" fill="var(--ink)" opacity=".75"/>
+      <rect class="bar" x="138" y="86"  width="16" height="68" rx="3" fill="var(--ink)"/>
+      <path d="M108 34 72 108h26l-8 50 40-74h-27z" fill="var(--accent)" stroke="var(--bg)" stroke-width="5" stroke-linejoin="round"/>
+    </svg>
+
+    <h1>Senior Project II</h1>
+
+    <p class="tag">A smart electricity system that tracks how much power you use and predicts what you will use next.</p>
+
+    <ul class="features">
+      <li><strong>Track consumption</strong><span>Enter your usage every week and see it in clear charts.</span></li>
+      <li><strong>Predict demand</strong><span>Forecast next month's consumption and bill from your past usage.</span></li>
+      <li><strong>Save energy</strong><span>Get alerts and tips when your usage rises above normal.</span></li>
+    </ul>
+  </main>
+
+  <footer>© <span id="year"></span> Senior Project II – in development</footer>
+
+  <script type="module" src="js/home.js"></script>
+</body>
+</html>

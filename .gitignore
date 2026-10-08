@@ -1,0 +1,11 @@
+node_modules/
+dist/
+.env
+__pycache__/
+.venv/
+.pytest_cache/
+*.pyc
+*.docx
+web/public/js/
+web/migrations/*.js
+ml-service/results.md
