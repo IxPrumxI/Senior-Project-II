@@ -24,9 +24,15 @@ jobs:
         working-directory: ml-service
       - run: npm ci
         working-directory: web
-      - run: mysql -h 127.0.0.1 -uroot -ptest-password < db/schema.sql
-      - run: mysql -h 127.0.0.1 -uroot -ptest-password -e "CREATE DATABASE smart_electricity_test CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci"
-      - run: mysql -h 127.0.0.1 -uroot -ptest-password smart_electricity_test < db/schema.sql
+      - run: npm run migration:run
+        working-directory: web
+        env:
+          DB_HOST: 127.0.0.1
+          DB_PORT: 3306
+          DB_USER: root
+          DB_PASSWORD: test-password
+          DB_NAME: smart_electricity_test
+          JWT_SECRET: test-only-secret-at-least-32-characters
       - run: npm test
         working-directory: web
         env:

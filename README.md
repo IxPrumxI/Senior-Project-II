@@ -9,7 +9,7 @@ unusually high, and get a predicted next-month consumption and bill.
 
 | Folder | Stack | Purpose |
 | --- | --- | --- |
-| `db/` | MySQL 8 | `schema.sql`: users, consumption_records, prediction_results, alerts (from the report's ER diagram) |
+| `web/migrations/` | TypeORM | Versioned MySQL migrations for users, consumption_records, prediction_results, and alerts |
 | `ml-service/` | Python, FastAPI, scikit-learn | `POST /predict`: recent-mean / Random Forest model, predicts next 4 weeks with an error range |
 | `web/` | TypeScript, Express 5 | REST API (`src/`), browser code (`client/`), static pages (`public/`) |
 
@@ -17,7 +17,8 @@ unusually high, and get a predicted next-month consumption and bill.
 
 ```bash
 # 1. Database
-mysql -u root -p < db/schema.sql
+cp .env.example .env        # configure DB_PASSWORD and JWT_SECRET
+mysql -u root -p -e "CREATE DATABASE smart_electricity CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci"
 
 # 2. Prediction service
 cd ml-service
@@ -28,8 +29,9 @@ uvicorn app:app --port 8000
 
 # 3. Web app (new terminal)
 cd web
-cp .env.example .env        # set JWT_SECRET and DB_PASSWORD
+cp .env.example .env        # configure DB_* and JWT_SECRET for local services
 npm install
+npm run migration:run
 npm run build
 npm test
 npm start                   # http://localhost:3000
@@ -60,10 +62,10 @@ npm start                   # http://localhost:3000
 
 ## Evaluation and test execution
 
-From `ml-service`, run `python evaluate.py` to reproduce `results.md`, and `python -m pytest -p no:cacheprovider test_model.py` for model/API tests. In `web`, `npm test` runs pure analytics tests and skips DB integration tests by default. To run the API suite, initialize a dedicated `smart_electricity_test` database from `db/schema.sql`, set its connection variables and `RUN_API_INTEGRATION=1`, then run `npm test`. Never point this suite at the demo or development database.
-
-See `docs/TEST_REPORT.md` for traceability and measurements still to collect, and `docs/DEMO_SCRIPT.md` for the five-minute presentation flow.
+From `ml-service`, run `python evaluate.py` to reproduce `results.md`, and `python -m pytest -p no:cacheprovider test_model.py` for model/API tests. In `web`, `npm test` runs pure analytics tests and skips DB integration tests by default. To run the API suite, create a dedicated `smart_electricity_test` database, set its connection variables and `RUN_API_INTEGRATION=1`, then run `npm run migration:run` followed by `npm test`. Never point this suite at the demo or development database.
 
 ## Database migrations
 
-TypeORM migrations are the upgrade path; schema synchronization is disabled. For a fresh database, provision the MySQL database, then run `cd web && npm run migration:run`. Existing installations should first back up the database and then run the same command to apply pending migrations. `db/schema.sql` remains the matching bootstrap schema for Docker and local setup. Use `npm run migration:show` to inspect pending changes and `npm run migration:revert` only when intentionally rolling back the latest migration.
+TypeORM migrations are the only schema definition and upgrade path; schema synchronization is disabled. For a fresh database, provision an empty MySQL database, then run `cd web && npm run migration:run`. Existing installations should first back up the database and then run the same command to apply pending migrations. Use `npm run migration:show` to inspect pending changes and `npm run migration:revert` only when intentionally rolling back the latest migration.
+
+For Docker Compose, copy the root `.env.example` to `.env`, replace `DB_PASSWORD` and `JWT_SECRET`, then run `docker compose up --build`. Compose creates the configured MySQL database and the web service applies TypeORM migrations at startup. For a local web app, copy `web/.env.example` to `web/.env` and configure its database connection and JWT secret.

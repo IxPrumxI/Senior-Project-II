@@ -10,9 +10,6 @@ export class InitialSchema1770000000000 implements MigrationInterface {
       email VARCHAR(255) NOT NULL,
       password_hash VARCHAR(255) NOT NULL,
       price_per_kwh DECIMAL(6,4) NOT NULL DEFAULT 0.1800,
-      tariff_mode ENUM('tiered','flat_override') NOT NULL DEFAULT 'tiered',
-      tier_limit_kwh DECIMAL(10,2) NOT NULL DEFAULT 6000.00,
-      high_rate_per_kwh DECIMAL(6,4) NOT NULL DEFAULT 0.3000,
       created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
       PRIMARY KEY (user_id), UNIQUE KEY uq_users_email (email)
     ) ENGINE=InnoDB`);
