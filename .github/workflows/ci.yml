@@ -24,7 +24,7 @@ jobs:
         working-directory: ml-service
       - run: npm ci
         working-directory: web
-      - run: npm run migration:run
+      - run: npm run build:server && npm run migration:run:compiled
         working-directory: web
         env:
           DB_HOST: 127.0.0.1

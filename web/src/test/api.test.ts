@@ -12,6 +12,7 @@ if (process.env.RUN_API_INTEGRATION !== "1") {
 
 const { app } = require("../app") as typeof import("../app");
 const { pool } = require("../db") as typeof import("../db");
+const { AppDataSource } = require("../data-source") as typeof import("../data-source");
 let token = "";
 const email = `test-${Date.now()}@example.com`;
 
@@ -38,7 +39,7 @@ test("UC-00: API integration suite (test DB only)", async (suite) => {
   });
   await suite.test("UC-03: duplicate week updates the existing row", async () => {
     await request(app).post("/api/consumption").set("Authorization", `Bearer ${token}`).send({ date: "2026-10-08", units: 135 });
-    const [rows] = await pool.query<any[]>("SELECT units_consumed FROM consumption_records WHERE week_start = '2026-10-05'");
+    const [rows] = await pool.query<any[]>("SELECT units_consumed FROM consumption_records WHERE user_id = (SELECT user_id FROM users WHERE email = ?) AND week_start = '2026-10-05'", [email]);
     assert.equal(rows.length, 1); assert.equal(Number(rows[0].units_consumed), 135);
   });
   await suite.test("UC-03: invalid date and foreign delete are rejected", async () => {
@@ -51,7 +52,7 @@ test("UC-00: API integration suite (test DB only)", async (suite) => {
     assert.equal((await request(app).get("/api/dashboard").set("Authorization", `Bearer ${token}`)).status, 200);
     const [afterRows] = await pool.query<any[]>("SELECT alert_id FROM alerts");
     assert.equal(beforeRows.length, afterRows.length);
-    assert.equal((await request(app).get("/api/not-a-route")).status, 404);
+    assert.equal((await request(app).get("/api/not-a-route").set("Authorization", `Bearer ${token}`)).status, 404);
   });
   await suite.test("UC-04: settings are isolated to the authenticated account", async () => {
     const other = await request(app).post("/api/auth/register").send({ email: `settings-${Date.now()}@example.com`, password: "password123" });
@@ -67,8 +68,8 @@ test("UC-00: API integration suite (test DB only)", async (suite) => {
     assert.deepEqual(list.body, []);
   });
   await suite.test("UC-04: account tariff and name validation", async () => {
-    assert.equal((await request(app).patch("/api/me").set("Authorization", `Bearer ${token}`).send({ fullName: "Test", pricePerKwh: 0 })).status, 400);
-    const ok = await request(app).patch("/api/me").set("Authorization", `Bearer ${token}`).send({ fullName: "Test Name", pricePerKwh: 0.25 });
+    assert.equal((await request(app).patch("/api/me").set("Authorization", `Bearer ${token}`).send({ fullName: "Test", tariffMode: "flat_override", pricePerKwh: 0 })).status, 400);
+    const ok = await request(app).patch("/api/me").set("Authorization", `Bearer ${token}`).send({ fullName: "Test Name", tariffMode: "flat_override", pricePerKwh: 0.25 });
     assert.equal(ok.status, 200); assert.equal(ok.body.pricePerKwh, 0.25);
     const tiered = await request(app).patch("/api/me").set("Authorization", `Bearer ${token}`).send({ fullName: "Test Name", tariffMode: "tiered" });
     assert.equal(tiered.body.tariffMode, "tiered");
@@ -84,5 +85,6 @@ test("UC-00: API integration suite (test DB only)", async (suite) => {
     assert.equal(response.status, 200); assert.ok(Array.isArray(response.body.months));
   });
   await pool.end();
+  if (AppDataSource.isInitialized) await AppDataSource.destroy();
 });
 }
