@@ -14,3 +14,4 @@ coverage/
 web/public/js/
 web/migrations/*.js
 ml-service/results.md
+scripts
