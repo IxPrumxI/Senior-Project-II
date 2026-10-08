@@ -13,28 +13,44 @@ unusually high, and get a predicted next-month consumption and bill.
 | `ml-service/` | Python, FastAPI, scikit-learn | `POST /predict`: recent-mean / Random Forest model, predicts next 4 weeks with an error range |
 | `web/` | TypeScript, Express 5 | REST API (`src/`), browser code (`client/`), static pages (`public/`) |
 
-## Run locally
+## Run with Docker Compose
 
-```bash
-# 1. Database
-cp .env.example .env        # configure DB_PASSWORD and JWT_SECRET
-mysql -u root -p -e "CREATE DATABASE smart_electricity CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci"
+Start Docker Desktop, copy the Compose environment example, and set a strong MySQL password and JWT secret:
 
-# 2. Prediction service
+```powershell
+Copy-Item .env.example .env
+```
+
+Then build and start the services:
+
+```powershell
+docker compose up -d --build
+docker compose ps
+```
+
+Open [http://localhost:3000](http://localhost:3000). Compose starts MySQL and the prediction service, waits for both health checks, applies pending TypeORM migrations, and starts the web app. The database persists in a Docker volume when the services stop. To stop the services, run `docker compose down`.
+
+For later starts after the images have been built, use `docker compose up -d`.
+
+## Run services directly
+
+For a local MySQL installation, create the `smart_electricity` database and copy `web/.env.example` to `web/.env`. Set `DB_*` to match MySQL and configure `JWT_SECRET`. Then start the prediction service in one terminal and the web app in another:
+
+```powershell
 cd ml-service
-python -m venv .venv && source .venv/bin/activate
+py -m venv .venv
+.venv\Scripts\Activate.ps1
 pip install -r requirements.txt
-pytest
 uvicorn app:app --port 8000
+```
 
-# 3. Web app (new terminal)
+```powershell
 cd web
-cp .env.example .env        # configure DB_* and JWT_SECRET for local services
-npm install
+npm ci
 npm run migration:run
 npm run build
 npm test
-npm start                   # http://localhost:3000
+npm start
 ```
 
 ## API
