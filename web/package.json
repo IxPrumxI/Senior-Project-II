@@ -7,14 +7,14 @@
     "build:server": "tsc -p tsconfig.json",
     "build:client": "tsc -p tsconfig.client.json",
     "build": "npm run build:server && npm run build:client",
-    "postinstall": "tsc -p tsconfig.client.json",
-    "start": "node dist/server.js",
+    "start": "node dist/src/server.js",
     "seed": "ts-node-dev --transpile-only --exit-child scripts/seed.ts",
     "migration:run": "npm run build:server && typeorm-ts-node-commonjs migration:run -d src/data-source.ts",
+    "migration:run:compiled": "typeorm migration:run -d dist/src/data-source.js",
     "migration:revert": "npm run build:server && typeorm-ts-node-commonjs migration:revert -d src/data-source.ts",
     "migration:show": "npm run build:server && typeorm-ts-node-commonjs migration:show -d src/data-source.ts",
     "dev": "ts-node-dev --respawn src/server.ts",
-    "test": "npm run build:server && node --test --test-isolation=none dist/test/analytics.test.js dist/test/api.test.js"
+    "test": "npm run build:server && node --test dist/src/test/analytics.test.js dist/src/test/api.test.js"
   },
   "dependencies": {
     "bcryptjs": "^2.4.3",

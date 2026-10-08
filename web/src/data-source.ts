@@ -8,7 +8,11 @@ import { Alert } from "./entities/Alert";
 
 export const AppDataSource = new DataSource({
   type: "mysql",
-  ...config.db,
+  host: config.db.host,
+  port: config.db.port,
+  username: config.db.user,
+  password: config.db.password,
+  database: config.db.database,
   entities: [User, ConsumptionRecord, PredictionResult, Alert],
   migrations: ["dist/migrations/*.js"],
   synchronize: false,

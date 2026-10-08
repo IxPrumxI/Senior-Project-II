@@ -34,6 +34,6 @@ services:
     depends_on:
       db: { condition: service_healthy }
       ml: { condition: service_healthy }
-    command: ["sh", "-c", "npm run migration:run && npm start"]
+    command: ["sh", "-c", "npm run migration:run:compiled && npm start"]
 volumes:
   mysql_data:
