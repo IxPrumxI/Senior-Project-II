@@ -49,16 +49,30 @@ test("UC-00: API integration suite (test DB only)", async (suite) => {
   });
   await suite.test("UC-03: daily calendar entries can be created, edited, listed by month, and deleted", async () => {
     const auth = { Authorization: `Bearer ${token}` };
-    const created = await request(app).put("/api/consumption/daily/2026-10-14").set(auth).send({ units: 8.25 });
-    assert.equal(created.status, 200); assert.deepEqual(created.body, { date: "2026-10-14", units: 8.25 });
-    const updated = await request(app).put("/api/consumption/daily/2026-10-14").set(auth).send({ units: 9.5 });
+    const created = await request(app).put("/api/consumption/daily/2026-10-14").set(auth).send({ units: 8.25, readingType: "daily_use" });
+    assert.equal(created.status, 200); assert.equal(created.body.units, 8.25); assert.equal(created.body.derived, false);
+    const updated = await request(app).put("/api/consumption/daily/2026-10-14").set(auth).send({ units: 9.5, readingType: "daily_use" });
     assert.equal(updated.status, 200); assert.equal(updated.body.units, 9.5);
-    await request(app).put("/api/consumption/daily/2026-10-15").set(auth).send({ units: 3 });
+    const firstAuto = await request(app).put("/api/consumption/daily/2026-10-13").set(auth).send({ units: 5 });
+    assert.equal(firstAuto.status, 200); assert.equal(firstAuto.body.readingType, "daily_use"); assert.equal(firstAuto.body.detected, true);
+    const firstTotal = await request(app).put("/api/consumption/daily/2026-10-15").set(auth).send({ units: 1000, readingType: "meter_total" });
+    assert.equal(firstTotal.status, 200); assert.equal(firstTotal.body.units, null); assert.equal(firstTotal.body.needsBaseline, true);
+    const nextTotal = await request(app).put("/api/consumption/daily/2026-10-16").set(auth).send({ units: 1007.5 });
+    assert.equal(nextTotal.status, 200); assert.equal(nextTotal.body.readingType, "meter_total"); assert.equal(nextTotal.body.detected, true); assert.equal(nextTotal.body.units, 7.5); assert.equal(nextTotal.body.previousReadingDate, "2026-10-15");
+    assert.equal((await request(app).put("/api/consumption/daily/2026-10-17").set(auth).send({ units: 10, readingType: "meter_total" })).status, 400);
     const month = await request(app).get("/api/consumption/daily?start=2026-10-01&end=2026-10-31").set(auth);
     assert.equal(month.status, 200);
-    assert.deepEqual(month.body.filter((entry: { date: string }) => entry.date.startsWith("2026-10-1")), [
-      { date: "2026-10-14", units: 9.5 }, { date: "2026-10-15", units: 3 },
+    assert.deepEqual(month.body.filter((entry: { date: string }) => ["2026-10-14", "2026-10-15", "2026-10-16"].includes(entry.date)), [
+      { date: "2026-10-14", reading: 9.5, readingType: "daily_use", units: 9.5, derived: false },
+      { date: "2026-10-15", reading: 1000, readingType: "meter_total", units: null, derived: true, needsBaseline: true },
+      { date: "2026-10-16", reading: 1007.5, readingType: "meter_total", units: 7.5, derived: true, previousReadingDate: "2026-10-15", invalidDrop: false },
     ]);
+    const dashboard = await request(app).get("/api/dashboard").set(auth);
+    assert.equal(dashboard.status, 200);
+    assert.equal(dashboard.body.history.find((week: { weekStart: string }) => week.weekStart === "2026-10-12").units, 22);
+    const followingMonth = await request(app).get("/api/consumption/daily?start=2026-11-01&end=2026-11-30").set(auth);
+    assert.equal(followingMonth.status, 200);
+    assert.equal(followingMonth.body.length, 0);
     assert.equal((await request(app).delete("/api/consumption/daily/2026-10-14").set(auth)).status, 204);
     assert.equal((await request(app).delete("/api/consumption/daily/2026-10-14").set(auth)).status, 404);
     assert.equal((await request(app).put("/api/consumption/daily/2026-02-30").set(auth).send({ units: 1 })).status, 400);

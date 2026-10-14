@@ -3,7 +3,7 @@ import { api, clearToken, getToken } from "./api.js";
 declare const Chart: any;
 
 interface WeekRecord { weekStart: string; units: number }
-interface DailyRecord { date: string; units: number }
+interface DailyRecord { date: string; reading: number; readingType: "daily_use" | "meter_total"; units: number | null; derived: boolean; needsBaseline?: boolean; invalidDrop?: boolean; previousReadingDate?: string }
 interface Dashboard {
   history: WeekRecord[];
   averageWeeklyUnits: number;
@@ -120,9 +120,10 @@ function renderCalendar(): void {
     const date = `${year}-${String(month + 1).padStart(2, "0")}-${String(day).padStart(2, "0")}`;
     const record = dailyEntries.find((item) => item.date === date);
     const button = document.createElement("button");
-    button.type = "button"; button.className = `calendar-day${record ? " has-reading" : ""}`; button.textContent = String(day);
-    button.setAttribute("aria-label", `${date}${record ? `, ${record.units} kWh` : ", no reading"}`);
-    button.title = record ? `${record.units} kWh · select to edit` : "Select to add a daily reading";
+    button.type = "button"; button.className = `calendar-day${record ? " has-reading" : ""}${record?.invalidDrop ? " invalid-reading" : ""}`; button.textContent = String(day);
+    const detail = record ? record.readingType === "meter_total" ? `${record.reading} kWh meter total${record.units === null ? " · needs a previous reading" : ` · ${record.units} kWh used`}` : `${record.units} kWh used` : "no reading";
+    button.setAttribute("aria-label", `${date}, ${detail}`);
+    button.title = `${detail} · select to edit`;
     button.setAttribute("aria-pressed", String(selectedDate === date));
     button.addEventListener("click", () => selectCalendarDate(date));
     cells.push(button);
@@ -146,9 +147,14 @@ function selectCalendarDate(date: string): void {
   selectedDate = date;
   const existing = dailyEntries.find((entry) => entry.date === date);
   setText("dailyEntryTitle", `Reading for ${new Date(`${date}T00:00:00`).toLocaleDateString(undefined, { weekday: "long", month: "long", day: "numeric", year: "numeric" })}`);
-  ($("dailyUnits") as HTMLInputElement).value = existing ? String(existing.units) : "";
+  ($("dailyUnits") as HTMLInputElement).value = existing ? String(existing.reading) : "";
+  ($("dailyReadingType") as HTMLSelectElement).value = existing?.readingType ?? "auto";
+  updateReadingModeHelp();
   $("dailyExisting").hidden = !existing;
-  $("dailyExisting").textContent = existing ? `Saved reading: ${existing.units} kWh` : "No reading saved for this date yet.";
+  $("dailyExisting").textContent = existing ? existing.readingType === "meter_total"
+    ? `Total meter: ${existing.reading} kWh${existing.units === null ? " · first reading establishes your baseline" : ` · usage since ${existing.previousReadingDate}: ${existing.units} kWh`}`
+    : `Daily use: ${existing.reading} kWh`
+    : "No reading saved for this date yet.";
   $("dailyDelete").hidden = !existing;
   $("dailyEntryError").textContent = "";
   $("dailyEntry").hidden = false;
@@ -158,10 +164,23 @@ function selectCalendarDate(date: string): void {
 
 async function saveDailyEntry(units: number): Promise<void> {
   if (!selectedDate) return;
-  await api(`/consumption/daily/${selectedDate}`, { method: "PUT", body: { units } });
+  const date = selectedDate;
+  await api(`/consumption/daily/${date}`, { method: "PUT", body: { units, readingType: ($("dailyReadingType") as HTMLSelectElement).value } });
   await loadDailyEntries();
-  selectCalendarDate(selectedDate);
+  selectCalendarDate(date);
 }
+
+function updateReadingModeHelp(): void {
+  const mode = ($("dailyReadingType") as HTMLSelectElement).value;
+  setText("dailyUnitsLabel", mode === "meter_total" ? "Total meter reading (kWh)" : mode === "auto" ? "Meter value (kWh)" : "Usage for this day (kWh)");
+  setText("dailyReadingHelp", mode === "meter_total"
+    ? "Enter the cumulative number shown on the meter. Usage is calculated from the previous total; your first total sets a baseline."
+    : mode === "auto"
+      ? "We compare this with your previous total reading. A value at or above it is treated as a meter total; a lower value is treated as daily use. For your first entry, choose daily use or meter total explicitly."
+      : "Enter only the electricity used on this calendar date.");
+}
+
+$("dailyReadingType").addEventListener("change", updateReadingModeHelp);
 
 $("calendarPrevious").addEventListener("click", () => { calendarCursor.setMonth(calendarCursor.getMonth() - 1); selectedDate = null; $("dailyEntry").hidden = true; void loadDailyEntries().catch(showCalendarError); });
 $("calendarNext").addEventListener("click", () => { calendarCursor.setMonth(calendarCursor.getMonth() + 1); selectedDate = null; $("dailyEntry").hidden = true; void loadDailyEntries().catch(showCalendarError); });

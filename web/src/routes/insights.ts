@@ -12,6 +12,35 @@ export const insightsRouter = Router();
 insightsRouter.use(requireAuth);
 
 async function loadHistory(userId: number): Promise<WeekRecord[]> {
+  const [dailyRows] = await pool.query<RowDataPacket[]>(
+    `SELECT entry_date AS date, units_consumed AS reading, reading_type AS readingType
+     FROM daily_consumption_entries WHERE user_id = ? ORDER BY entry_date ASC`, [userId],
+  );
+  if (dailyRows.length) {
+    const weeks = new Map<string, number>();
+    for (let index = 0; index < dailyRows.length; index++) {
+      const row = dailyRows[index];
+      let units: number | null = null;
+      if (String(row.readingType) === "daily_use") units = Number(row.reading);
+      else {
+        const previous = dailyRows.slice(0, index).reverse().find((candidate) => String(candidate.readingType) === "meter_total");
+        if (previous) units = Number(row.reading) - Number(previous.reading);
+      }
+      if (units === null || units < 0) continue;
+      const date = String(row.date).slice(0, 10);
+      const monday = new Date(`${date}T00:00:00Z`);
+      const day = monday.getUTCDay();
+      monday.setUTCDate(monday.getUTCDate() + (day === 0 ? -6 : 1 - day));
+      const weekStart = monday.toISOString().slice(0, 10);
+      weeks.set(weekStart, (weeks.get(weekStart) ?? 0) + units);
+    }
+    const [weeklyRows] = await pool.query<RowDataPacket[]>(
+      "SELECT week_start AS weekStart, units_consumed AS units FROM consumption_records WHERE user_id = ? ORDER BY week_start ASC", [userId],
+    );
+    const combined = new Map<string, number>(weeklyRows.map((row) => [String(row.weekStart).slice(0, 10), Number(row.units)]));
+    for (const [weekStart, units] of weeks) combined.set(weekStart, round2(units));
+    return [...combined].sort(([a], [b]) => a.localeCompare(b)).map(([weekStart, units]) => ({ weekStart, units: round2(units) }));
+  }
   const [rows] = await pool.query<RowDataPacket[]>(
     "SELECT week_start AS weekStart, units_consumed AS units FROM consumption_records WHERE user_id = ? ORDER BY week_start ASC", [userId],
   );

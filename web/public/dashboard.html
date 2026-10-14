@@ -58,8 +58,13 @@
         <div class="calendar-heading"><h3 id="dailyEntryTitle">Daily reading</h3><button class="btn btn-outline" id="dailyEntryClose" type="button">Close</button></div>
         <p id="dailyExisting" hidden></p>
         <form class="entry-form" id="dailyEntryForm">
-          <div><label for="dailyUnits">Units used that day (kWh)</label><input type="number" id="dailyUnits" min="0" step="0.01" required></div>
-          <button class="btn btn-solid" id="dailySave" type="submit">Save daily reading</button>
+          <div>
+            <label for="dailyReadingType">Reading type</label>
+            <select id="dailyReadingType"><option value="auto">Automatic</option><option value="daily_use">Usage for this day</option><option value="meter_total">Total meter reading</option></select>
+          </div>
+          <div><label for="dailyUnits" id="dailyUnitsLabel">Units used that day (kWh)</label><input type="number" id="dailyUnits" min="0" step="0.01" required></div>
+          <p id="dailyReadingHelp">Enter the electricity used on this date.</p>
+          <button class="btn btn-solid" id="dailySave" type="submit">Save reading</button>
           <button class="btn btn-outline" id="dailyDelete" type="button" hidden>Delete reading</button>
         </form>
         <p class="error" id="dailyEntryError" role="alert"></p>
