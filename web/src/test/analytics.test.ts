@@ -34,8 +34,9 @@ test("monthly totals use each user's invoice cycle across year boundaries", () =
   assert.deepEqual(months.map((m) => m.month), ["2025-12", "2026-01"]);
   assert.equal(months[0].partial, true);
   assert.equal(months[1].units, 250);
-  assert.equal(invoiceMonthOf("2026-01-05", 10), "2025-12");
-  assert.equal(invoiceMonthOf("2026-01-12", 10), "2026-01");
+  assert.equal(invoiceMonthOf("2026-01-05", 10), "2025-12-10");
+  assert.equal(invoiceMonthOf("2026-01-12", 10), "2026-01-10");
+  assert.equal(invoiceMonthOf("2025-12-29", 10), "2025-12-10");
 });
 
 test("UC-06: alert tips reflect severity and summer", () => {

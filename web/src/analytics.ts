@@ -89,13 +89,13 @@ export function energySavingTips(records: WeekRecord[], month = new Date().getUT
 
 export interface MonthlyRecord { month: string; units: number; weeks: number; partial: boolean }
 
-/** Returns the invoice cycle containing the given date, formatted YYYY-MM. */
+/** Returns the invoice cycle with the given start date, formatted YYYY-MM-DD. */
 export function invoiceMonthOf(date: string, invoiceDay: number): string {
   const day = Number(date.slice(8, 10));
   const value = new Date(`${date}T00:00:00Z`);
   if (Number.isNaN(value.getTime()) || !Number.isInteger(invoiceDay) || invoiceDay < 1 || invoiceDay > 28) throw new Error("Invalid invoice date");
   if (day < invoiceDay) value.setUTCMonth(value.getUTCMonth() - 1);
-  return `${value.getUTCFullYear()}-${String(value.getUTCMonth() + 1).padStart(2, "0")}`;
+  return `${value.getUTCFullYear()}-${String(value.getUTCMonth() + 1).padStart(2, "0")}-${String(invoiceDay).padStart(2, "0")}`;
 }
 
 export function groupMonthly(records: WeekRecord[], invoiceDay = 1): MonthlyRecord[] {
@@ -108,7 +108,7 @@ export function groupMonthly(records: WeekRecord[], invoiceDay = 1): MonthlyReco
     groups.set(month, value);
   }
   return [...groups].sort(([a], [b]) => a.localeCompare(b)).map(([month, value]) => ({
-    month, units: round2(value.units), weeks: value.weeks, partial: value.weeks < 4,
+    month: month.slice(0, 7), units: round2(value.units), weeks: value.weeks, partial: value.weeks < 4,
   }));
 }
 
