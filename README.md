@@ -64,12 +64,13 @@ npm start
 | GET | `/api/alerts` | stored alerts |
 | GET/PATCH | `/api/me` | account profile and per-kWh tariff |
 | PUT/DELETE | `/api/consumption/:weekStart` | edit or remove an owned weekly record |
-| GET | `/api/dashboard/monthly` | month totals grouped by the month containing Monday `week_start` |
+| GET | `/api/dashboard/monthly` | month totals grouped by the invoice cycle containing Monday `week_start` |
 
 ## Design notes
 
 - Records are keyed by the Monday of the week; entering the same week twice updates it.
-- Monthly groups assign a week to the calendar month containing its `week_start`; groups with fewer than four records are partial.
+- Users can set their invoice day (1–28) in account settings. Monthly groups assign a week to the invoice cycle containing its Monday `week_start`; groups with fewer than four weekly records are partial.
+- Energy-saving suggestions compare recent usage with each user's earlier readings and highlight unusually high weeks, alongside seasonal and general advice.
 - Alert rule: latest week more than 20% above the average of earlier weeks (needs 3+ earlier weeks).
 - Prediction needs at least 4 weekly records and currently uses the mean of the latest four weeks at all supported history lengths, based on the fixed-seed synthetic backtest in `ml-service/results.md`. Per-month predictions update in place.
 - Default progressive tariff charges the first 6,000 forecast kWh at 0.18 SAR/kWh and only excess units at 0.30 SAR/kWh. Users can select a flat-rate override in settings; that override replaces the tier schedule.

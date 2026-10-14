@@ -76,6 +76,14 @@ test("UC-00: API integration suite (test DB only)", async (suite) => {
     const flat = await request(app).patch("/api/me").set("Authorization", `Bearer ${token}`).send({ fullName: "Test Name", tariffMode: "flat_override", pricePerKwh: 0.25 });
     assert.equal(flat.body.tariffMode, "flat_override"); assert.equal(flat.body.pricePerKwh, 0.25);
   });
+  await suite.test("UC-04: invoice day validation and saved account preference", async () => {
+    const invalid = await request(app).patch("/api/me").set("Authorization", `Bearer ${token}`).send({ fullName: "Test Name", invoiceDay: 29 });
+    assert.equal(invalid.status, 400);
+    const saved = await request(app).patch("/api/me").set("Authorization", `Bearer ${token}`).send({ fullName: "Test Name", tariffMode: "tiered", invoiceDay: 15 });
+    assert.equal(saved.status, 200); assert.equal(saved.body.invoiceDay, 15);
+    const profile = await request(app).get("/api/me").set("Authorization", `Bearer ${token}`);
+    assert.equal(profile.body.invoiceDay, 15);
+  });
   await suite.test("UC-04: invalid flat tariff mode is rejected", async () => {
     const response = await request(app).patch("/api/me").set("Authorization", `Bearer ${token}`).send({ fullName: "Test Name", tariffMode: "unknown" });
     assert.equal(response.status, 400);
