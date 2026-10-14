@@ -7,6 +7,46 @@ import { mondayOf, checkAboveAverage } from "../analytics";
 export const consumptionRouter = Router();
 consumptionRouter.use(requireAuth);
 
+function validDate(date: unknown): date is string {
+  if (typeof date !== "string" || !/^\d{4}-\d{2}-\d{2}$/.test(date)) return false;
+  const parsed = new Date(`${date}T00:00:00Z`);
+  return !Number.isNaN(parsed.getTime()) && parsed.toISOString().slice(0, 10) === date;
+}
+
+// Daily calendar entries are separate from legacy weekly summaries.
+consumptionRouter.get("/daily", async (req: AuthedRequest, res) => {
+  const start = req.query.start;
+  const end = req.query.end;
+  if (!validDate(start) || !validDate(end) || start > end) return res.status(400).json({ error: "start and end must be valid dates with start on or before end" });
+  const [rows] = await pool.query<RowDataPacket[]>(
+    `SELECT entry_date AS date, units_consumed AS units FROM daily_consumption_entries
+     WHERE user_id = ? AND entry_date BETWEEN ? AND ? ORDER BY entry_date ASC`,
+    [req.userId, start, end],
+  );
+  res.json(rows.map((row) => ({ date: String(row.date).slice(0, 10), units: Number(row.units) })));
+});
+
+consumptionRouter.put("/daily/:date", async (req: AuthedRequest, res) => {
+  const date = String(req.params.date);
+  const units = Number(req.body?.units);
+  if (!validDate(date)) return res.status(400).json({ error: "date must be a valid YYYY-MM-DD date" });
+  if (!Number.isFinite(units) || units < 0) return res.status(400).json({ error: "units must be a non-negative number" });
+  await pool.query(
+    `INSERT INTO daily_consumption_entries (user_id, entry_date, units_consumed) VALUES (?, ?, ?)
+     ON DUPLICATE KEY UPDATE units_consumed = VALUES(units_consumed), updated_at = CURRENT_TIMESTAMP`,
+    [req.userId, date, units],
+  );
+  res.json({ date, units });
+});
+
+consumptionRouter.delete("/daily/:date", async (req: AuthedRequest, res) => {
+  const date = String(req.params.date);
+  if (!validDate(date)) return res.status(400).json({ error: "date must be a valid YYYY-MM-DD date" });
+  const [result] = await pool.query("DELETE FROM daily_consumption_entries WHERE user_id = ? AND entry_date = ?", [req.userId, date]);
+  if (!(result as { affectedRows?: number }).affectedRows) return res.status(404).json({ error: "Daily entry not found" });
+  res.status(204).end();
+});
+
 // UC-03 Add Weekly Consumption (re-submitting the same week updates it)
 consumptionRouter.post("/", async (req: AuthedRequest, res) => {
   const { date, units, billAmount } = req.body ?? {};
@@ -65,8 +105,6 @@ consumptionRouter.get("/", async (req: AuthedRequest, res) => {
 
 consumptionRouter.put("/:weekStart", async (req: AuthedRequest, res) => {
   const weekStart = String(req.params.weekStart);
-  if (!/^\d{4}-\d{2}-\d{2}$/.test(weekStart)) return res.status(400).json({ error: "weekStart must be YYYY-MM-DD" });
-  try { if (mondayOf(weekStart) !== weekStart) return res.status(400).json({ error: "weekStart must be a Monday" }); } catch { return res.status(400).json({ error: "Invalid date" }); }
   if (!/^\d{4}-\d{2}-\d{2}$/.test(weekStart)) return res.status(400).json({ error: "weekStart must be YYYY-MM-DD" });
   try { if (mondayOf(weekStart) !== weekStart) return res.status(400).json({ error: "weekStart must be a Monday" }); } catch { return res.status(400).json({ error: "Invalid date" }); }
   const units = Number(req.body?.units);

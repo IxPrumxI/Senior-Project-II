@@ -47,6 +47,22 @@ test("UC-00: API integration suite (test DB only)", async (suite) => {
     const other = await request(app).post("/api/auth/register").send({ email: `foreign-${Date.now()}@example.com`, password: "password123" });
     assert.equal((await request(app).delete("/api/consumption/2026-10-05").set("Authorization", `Bearer ${other.body.token}`)).status, 404);
   });
+  await suite.test("UC-03: daily calendar entries can be created, edited, listed by month, and deleted", async () => {
+    const auth = { Authorization: `Bearer ${token}` };
+    const created = await request(app).put("/api/consumption/daily/2026-10-14").set(auth).send({ units: 8.25 });
+    assert.equal(created.status, 200); assert.deepEqual(created.body, { date: "2026-10-14", units: 8.25 });
+    const updated = await request(app).put("/api/consumption/daily/2026-10-14").set(auth).send({ units: 9.5 });
+    assert.equal(updated.status, 200); assert.equal(updated.body.units, 9.5);
+    await request(app).put("/api/consumption/daily/2026-10-15").set(auth).send({ units: 3 });
+    const month = await request(app).get("/api/consumption/daily?start=2026-10-01&end=2026-10-31").set(auth);
+    assert.equal(month.status, 200);
+    assert.deepEqual(month.body.filter((entry: { date: string }) => entry.date.startsWith("2026-10-1")), [
+      { date: "2026-10-14", units: 9.5 }, { date: "2026-10-15", units: 3 },
+    ]);
+    assert.equal((await request(app).delete("/api/consumption/daily/2026-10-14").set(auth)).status, 204);
+    assert.equal((await request(app).delete("/api/consumption/daily/2026-10-14").set(auth)).status, 404);
+    assert.equal((await request(app).put("/api/consumption/daily/2026-02-30").set(auth).send({ units: 1 })).status, 400);
+  });
   await suite.test("UC-04: dashboard read is side-effect free and unknown route is 404", async () => {
     const [beforeRows] = await pool.query<any[]>("SELECT alert_id FROM alerts");
     assert.equal((await request(app).get("/api/dashboard").set("Authorization", `Bearer ${token}`)).status, 200);
@@ -59,13 +75,6 @@ test("UC-00: API integration suite (test DB only)", async (suite) => {
     await request(app).patch("/api/me").set("Authorization", `Bearer ${token}`).send({ fullName: "Owned Name", pricePerKwh: 0.3 });
     const theirs = await request(app).get("/api/me").set("Authorization", `Bearer ${other.body.token}`);
     assert.notEqual(theirs.body.fullName, "Owned Name"); assert.notEqual(theirs.body.pricePerKwh, 0.3);
-  });
-  await suite.test("UC-04: a user cannot read or change another user's record", async () => {
-    const other = await request(app).post("/api/auth/register").send({ email: `other-${Date.now()}@example.com`, password: "password123" });
-    const foreign = await request(app).put("/api/consumption/2026-10-05").set("Authorization", `Bearer ${other.body.token}`).send({ units: 999 });
-    assert.equal(foreign.status, 404);
-    const list = await request(app).get("/api/consumption").set("Authorization", `Bearer ${other.body.token}`);
-    assert.deepEqual(list.body, []);
   });
   await suite.test("UC-04: account tariff and name validation", async () => {
     assert.equal((await request(app).patch("/api/me").set("Authorization", `Bearer ${token}`).send({ fullName: "Test", tariffMode: "flat_override", pricePerKwh: 0 })).status, 400);

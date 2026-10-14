@@ -3,6 +3,7 @@ import { api, clearToken, getToken } from "./api.js";
 declare const Chart: any;
 
 interface WeekRecord { weekStart: string; units: number }
+interface DailyRecord { date: string; units: number }
 interface Dashboard {
   history: WeekRecord[];
   averageWeeklyUnits: number;
@@ -30,7 +31,7 @@ function setText(id: string, text: string): void { $(id).textContent = text; }
 
 const pageSections: Record<string, string[]> = {
   overview: ["summaryCard", "alert", "overviewCharts", "tipsCard", "overviewLinks"],
-  usage: ["calendarCard", "calendarEntry", "historyCard"],
+  usage: ["calendarCard", "historyCard"],
   insights: ["monthlyCard", "predictionCard", "alertHistoryCard", "predictionHistoryCard"],
   settings: ["settingsCard"],
 };
@@ -117,31 +118,75 @@ function renderCalendar(): void {
   }
   for (let day = 1; day <= new Date(year, month + 1, 0).getDate(); day++) {
     const date = `${year}-${String(month + 1).padStart(2, "0")}-${String(day).padStart(2, "0")}`;
-    const weekStart = mondayOfLocal(date);
-    const record = currentHistory.find((item) => item.weekStart === weekStart);
+    const record = dailyEntries.find((item) => item.date === date);
     const button = document.createElement("button");
     button.type = "button"; button.className = `calendar-day${record ? " has-reading" : ""}`; button.textContent = String(day);
-    button.setAttribute("aria-label", `${date}${record ? `, ${record.units} kWh for week` : ", no reading for this week"}`);
-    button.title = record ? `${record.units} kWh · week of ${weekStart}` : `Enter usage for week of ${weekStart}`;
-    button.addEventListener("click", () => {
-      ($("date") as HTMLInputElement).value = date;
-      ($("units") as HTMLInputElement).focus();
-      $("calendarEntry").scrollIntoView({ behavior: "smooth", block: "center" });
-    });
+    button.setAttribute("aria-label", `${date}${record ? `, ${record.units} kWh` : ", no reading"}`);
+    button.title = record ? `${record.units} kWh · select to edit` : "Select to add a daily reading";
+    button.setAttribute("aria-pressed", String(selectedDate === date));
+    button.addEventListener("click", () => selectCalendarDate(date));
     cells.push(button);
   }
   $("calendarGrid").replaceChildren(...cells);
 }
 
-function mondayOfLocal(date: string): string {
-  const value = new Date(`${date}T00:00:00`);
-  const day = value.getDay();
-  value.setDate(value.getDate() + (day === 0 ? -6 : 1 - day));
-  return `${value.getFullYear()}-${String(value.getMonth() + 1).padStart(2, "0")}-${String(value.getDate()).padStart(2, "0")}`;
+let dailyEntries: DailyRecord[] = [];
+let selectedDate: string | null = null;
+
+async function loadDailyEntries(): Promise<void> {
+  const year = calendarCursor.getFullYear();
+  const month = calendarCursor.getMonth();
+  const start = `${year}-${String(month + 1).padStart(2, "0")}-01`;
+  const end = `${year}-${String(month + 1).padStart(2, "0")}-${String(new Date(year, month + 1, 0).getDate()).padStart(2, "0")}`;
+  dailyEntries = await api<DailyRecord[]>(`/consumption/daily?start=${start}&end=${end}`);
+  renderCalendar();
 }
 
-$("calendarPrevious").addEventListener("click", () => { calendarCursor.setMonth(calendarCursor.getMonth() - 1); renderCalendar(); });
-$("calendarNext").addEventListener("click", () => { calendarCursor.setMonth(calendarCursor.getMonth() + 1); renderCalendar(); });
+function selectCalendarDate(date: string): void {
+  selectedDate = date;
+  const existing = dailyEntries.find((entry) => entry.date === date);
+  setText("dailyEntryTitle", `Reading for ${new Date(`${date}T00:00:00`).toLocaleDateString(undefined, { weekday: "long", month: "long", day: "numeric", year: "numeric" })}`);
+  ($("dailyUnits") as HTMLInputElement).value = existing ? String(existing.units) : "";
+  $("dailyExisting").hidden = !existing;
+  $("dailyExisting").textContent = existing ? `Saved reading: ${existing.units} kWh` : "No reading saved for this date yet.";
+  $("dailyDelete").hidden = !existing;
+  $("dailyEntryError").textContent = "";
+  $("dailyEntry").hidden = false;
+  renderCalendar();
+  ($("dailyUnits") as HTMLInputElement).focus();
+}
+
+async function saveDailyEntry(units: number): Promise<void> {
+  if (!selectedDate) return;
+  await api(`/consumption/daily/${selectedDate}`, { method: "PUT", body: { units } });
+  await loadDailyEntries();
+  selectCalendarDate(selectedDate);
+}
+
+$("calendarPrevious").addEventListener("click", () => { calendarCursor.setMonth(calendarCursor.getMonth() - 1); selectedDate = null; $("dailyEntry").hidden = true; void loadDailyEntries().catch(showCalendarError); });
+$("calendarNext").addEventListener("click", () => { calendarCursor.setMonth(calendarCursor.getMonth() + 1); selectedDate = null; $("dailyEntry").hidden = true; void loadDailyEntries().catch(showCalendarError); });
+$("dailyEntryClose").addEventListener("click", () => { selectedDate = null; $("dailyEntry").hidden = true; renderCalendar(); });
+$("dailyEntryForm").addEventListener("submit", async (event) => {
+  event.preventDefault();
+  const button = $("dailySave") as HTMLButtonElement;
+  button.disabled = true;
+  try { await saveDailyEntry(Number(($("dailyUnits") as HTMLInputElement).value)); }
+  catch (error) { setText("dailyEntryError", error instanceof Error ? error.message : "Could not save daily reading"); }
+  finally { button.disabled = false; }
+});
+$("dailyDelete").addEventListener("click", async () => {
+  if (!selectedDate || !window.confirm(`Delete the reading for ${selectedDate}?`)) return;
+  const date = selectedDate;
+  try {
+    await api(`/consumption/daily/${date}`, { method: "DELETE" });
+    await loadDailyEntries();
+    selectCalendarDate(date);
+  } catch (error) { setText("dailyEntryError", error instanceof Error ? error.message : "Could not delete daily reading"); }
+});
+
+function showCalendarError(error: unknown): void {
+  setText("dailyEntryError", error instanceof Error ? error.message : "Could not load daily readings");
+}
 
 async function loadSettings(): Promise<void> {
   const me = await api<{ fullName: string; pricePerKwh: number | null; tariffMode: string; invoiceDay: number }>("/me");
@@ -198,4 +243,4 @@ $("settingsForm").addEventListener("submit", async (event) => {
   finally { button.disabled = false; }
 });
 
-loadDashboard().then(loadSettings).catch((error) => { setText("compare", error instanceof Error ? error.message : "Could not load data"); $("loadError").hidden = false; });
+loadDashboard().then(loadSettings).then(loadDailyEntries).catch((error) => { setText("compare", error instanceof Error ? error.message : "Could not load data"); $("loadError").hidden = false; });

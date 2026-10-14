@@ -50,20 +50,20 @@
 
     <section class="card" id="calendarCard" data-page-section="calendarCard">
       <div class="calendar-heading"><h2>Consumption calendar</h2><div><button class="btn btn-outline" id="calendarPrevious" type="button" aria-label="Previous month">‹</button> <strong id="calendarMonth"></strong> <button class="btn btn-outline" id="calendarNext" type="button" aria-label="Next month">›</button></div></div>
-      <p>Choose any day to enter the reading for its week. Weeks begin on Monday.</p>
+      <p>Each date has its own daily reading. Select a date to add, edit, or remove its entry.</p>
       <div class="calendar-weekdays" aria-hidden="true"><span>Sun</span><span>Mon</span><span>Tue</span><span>Wed</span><span>Thu</span><span>Fri</span><span>Sat</span></div>
       <div class="calendar-grid" id="calendarGrid"></div>
-      <p class="calendar-key"><span class="reading-dot"></span> Week has a saved reading</p>
-    </section>
-
-    <section class="card" id="calendarEntry" data-page-section="calendarEntry">
-      <h2>Add weekly consumption</h2>
-      <form class="auth-form entry-form" id="entryForm">
-        <div><label for="date">Any date in the week</label><input type="date" id="date" required></div>
-        <div><label for="units">Units used (kWh)</label><input type="number" id="units" min="0" step="0.01" required></div>
-        <button type="submit" class="btn btn-solid">Save reading</button>
-      </form>
-      <p class="error" id="entryError" role="alert"></p>
+      <p class="calendar-key"><span class="reading-dot"></span> Date has a saved reading</p>
+      <section class="daily-entry" id="dailyEntry" hidden aria-live="polite">
+        <div class="calendar-heading"><h3 id="dailyEntryTitle">Daily reading</h3><button class="btn btn-outline" id="dailyEntryClose" type="button">Close</button></div>
+        <p id="dailyExisting" hidden></p>
+        <form class="entry-form" id="dailyEntryForm">
+          <div><label for="dailyUnits">Units used that day (kWh)</label><input type="number" id="dailyUnits" min="0" step="0.01" required></div>
+          <button class="btn btn-solid" id="dailySave" type="submit">Save daily reading</button>
+          <button class="btn btn-outline" id="dailyDelete" type="button" hidden>Delete reading</button>
+        </form>
+        <p class="error" id="dailyEntryError" role="alert"></p>
+      </section>
     </section>
 
     <section class="card" id="historyCard" data-page-section="historyCard">
