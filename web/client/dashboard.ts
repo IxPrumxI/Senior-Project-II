@@ -82,7 +82,7 @@ async function loadDashboard(): Promise<void> {
       const value = window.prompt(`Weekly kWh for ${record.weekStart}`, String(record.units));
       if (value === null) return;
       try { await api(`/consumption/${record.weekStart}`, { method: "PUT", body: { units: value } }); await refreshViews(); }
-      catch (error) { setText("entryError", error instanceof Error ? error.message : "Could not update record"); }
+      catch (error) { setText("historyError", error instanceof Error ? error.message : "Could not update record"); }
     });
     editCell.append(edit);
     const deleteCell = document.createElement("td");
@@ -90,7 +90,7 @@ async function loadDashboard(): Promise<void> {
     remove.addEventListener("click", async () => {
       if (!window.confirm(`Delete the week starting ${record.weekStart}?`)) return;
       try { await api(`/consumption/${record.weekStart}`, { method: "DELETE" }); await refreshViews(); }
-      catch (error) { setText("entryError", error instanceof Error ? error.message : "Could not delete record"); }
+      catch (error) { setText("historyError", error instanceof Error ? error.message : "Could not delete record"); }
     });
     deleteCell.append(remove);
     row.append(week, units, editCell, deleteCell);
@@ -220,19 +220,6 @@ async function loadSettings(): Promise<void> {
 }
 
 async function refreshViews(): Promise<void> { await loadDashboard(); await loadSettings(); }
-
-$("entryForm").addEventListener("submit", async (event) => {
-  event.preventDefault();
-  const error = $("entryError");
-  const saveButton = $("entryForm").querySelector<HTMLButtonElement>('button[type="submit"]')!;
-  saveButton.disabled = true; error.textContent = "";
-  try {
-    await api("/consumption", { method: "POST", body: { date: ($("date") as HTMLInputElement).value, units: ($("units") as HTMLInputElement).value } });
-    ($("entryForm") as HTMLFormElement).reset();
-    await refreshViews();
-  } catch (failure) { error.textContent = failure instanceof Error ? failure.message : "Could not save"; }
-  finally { saveButton.disabled = false; }
-});
 
 $("predictBtn").addEventListener("click", async () => {
   const output = $("prediction"); output.textContent = "Calculating…";
