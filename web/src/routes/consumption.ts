@@ -145,10 +145,15 @@ consumptionRouter.post("/", async (req: AuthedRequest, res) => {
 
 // History, oldest first
 consumptionRouter.get("/", async (req: AuthedRequest, res) => {
+  const start = req.query.start;
+  const end = req.query.end;
+  if (start !== undefined || end !== undefined) {
+    if (!validDate(start) || !validDate(end) || start > end) return res.status(400).json({ error: "start and end must be valid dates with start on or before end" });
+  }
   const [rows] = await pool.query<RowDataPacket[]>(
     `SELECT week_start AS weekStart, units_consumed AS units, bill_amount AS billAmount
-     FROM consumption_records WHERE user_id = ? ORDER BY week_start ASC`,
-    [req.userId],
+     FROM consumption_records WHERE user_id = ? ${start === undefined ? "" : "AND week_start BETWEEN ? AND ?"} ORDER BY week_start ASC`,
+    start === undefined ? [req.userId] : [req.userId, start, end],
   );
   res.json(rows.map((r) => ({ ...r, units: Number(r.units), billAmount: r.billAmount === null ? null : Number(r.billAmount) })));
 });

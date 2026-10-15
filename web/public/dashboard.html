@@ -50,13 +50,21 @@
 
     <section class="card" id="calendarCard" data-page-section="calendarCard">
       <div class="calendar-heading"><h2>Consumption calendar</h2><div><button class="btn btn-outline" id="calendarPrevious" type="button" aria-label="Previous month">‹</button> <strong id="calendarMonth"></strong> <button class="btn btn-outline" id="calendarNext" type="button" aria-label="Next month">›</button></div></div>
-      <p>Each date has its own daily reading. Select a date to add, edit, or remove its entry.</p>
+      <p>Existing weekly totals appear on their Monday. Select any date to add or edit its daily reading and the total for its week.</p>
       <div class="calendar-weekdays" aria-hidden="true"><span>Sun</span><span>Mon</span><span>Tue</span><span>Wed</span><span>Thu</span><span>Fri</span><span>Sat</span></div>
       <div class="calendar-grid" id="calendarGrid"></div>
       <p class="calendar-key"><span class="reading-dot"></span> Date has a saved reading</p>
+      <p class="calendar-key"><span class="weekly-reading-dot"></span> Week has a saved weekly total</p>
       <section class="daily-entry" id="dailyEntry" hidden aria-live="polite">
         <div class="calendar-heading"><h3 id="dailyEntryTitle">Daily reading</h3><button class="btn btn-outline" id="dailyEntryClose" type="button">Close</button></div>
         <p id="dailyExisting" hidden></p>
+        <form class="entry-form weekly-entry-form" id="weeklyEntryForm">
+          <div><label for="weeklyEntryUnits" id="weeklyEntryLabel">Weekly total</label><input type="number" id="weeklyEntryUnits" min="0" step="0.01" required></div>
+          <button class="btn btn-solid" id="weeklyEntrySave" type="submit">Save weekly total</button>
+          <button class="btn btn-outline" id="weeklyEntryDelete" type="button" hidden>Delete weekly total</button>
+        </form>
+        <p id="weeklyEntryStatus" role="status"></p>
+        <p class="error" id="weeklyEntryError" role="alert"></p>
         <form class="entry-form" id="dailyEntryForm">
           <div>
             <label for="dailyReadingType">Reading type</label>

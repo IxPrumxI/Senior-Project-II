@@ -3,6 +3,7 @@ import { api, clearToken, getToken } from "./api.js";
 declare const Chart: any;
 
 interface WeekRecord { weekStart: string; units: number }
+interface WeeklyCalendarEntry { weekStart: string; units: number; billAmount: number | null }
 interface DailyRecord { date: string; reading: number; readingType: "daily_use" | "meter_total"; units: number | null; derived: boolean; needsBaseline?: boolean; invalidDrop?: boolean; previousReadingDate?: string }
 interface Dashboard {
   history: WeekRecord[];
@@ -119,9 +120,11 @@ function renderCalendar(): void {
   for (let day = 1; day <= new Date(year, month + 1, 0).getDate(); day++) {
     const date = `${year}-${String(month + 1).padStart(2, "0")}-${String(day).padStart(2, "0")}`;
     const record = dailyEntries.find((item) => item.date === date);
+    const weekly = weeklyEntries.find((item) => item.weekStart === date);
     const button = document.createElement("button");
-    button.type = "button"; button.className = `calendar-day${record ? " has-reading" : ""}${record?.invalidDrop ? " invalid-reading" : ""}`; button.textContent = String(day);
-    const detail = record ? record.readingType === "meter_total" ? `${record.reading} kWh meter total${record.units === null ? " · needs a previous reading" : ` · ${record.units} kWh used`}` : `${record.units} kWh used` : "no reading";
+    button.type = "button"; button.className = `calendar-day${record ? " has-reading" : ""}${weekly ? " has-weekly" : ""}${record?.invalidDrop ? " invalid-reading" : ""}`; button.textContent = String(day);
+    const details = [record ? record.readingType === "meter_total" ? `${record.reading} kWh meter total${record.units === null ? " · needs a previous reading" : ` · ${record.units} kWh used`}` : `${record.units} kWh daily use` : "", weekly ? `${weekly.units} kWh weekly total` : ""].filter(Boolean);
+    const detail = details.length ? details.join("; ") : "no reading";
     button.setAttribute("aria-label", `${date}, ${detail}`);
     button.title = `${detail} · select to edit`;
     button.setAttribute("aria-pressed", String(selectedDate === date));
@@ -132,20 +135,29 @@ function renderCalendar(): void {
 }
 
 let dailyEntries: DailyRecord[] = [];
+let weeklyEntries: WeeklyCalendarEntry[] = [];
 let selectedDate: string | null = null;
+let selectedWeekStart: string | null = null;
 
 async function loadDailyEntries(): Promise<void> {
   const year = calendarCursor.getFullYear();
   const month = calendarCursor.getMonth();
   const start = `${year}-${String(month + 1).padStart(2, "0")}-01`;
   const end = `${year}-${String(month + 1).padStart(2, "0")}-${String(new Date(year, month + 1, 0).getDate()).padStart(2, "0")}`;
-  dailyEntries = await api<DailyRecord[]>(`/consumption/daily?start=${start}&end=${end}`);
+  const [daily, weekly] = await Promise.all([
+    api<DailyRecord[]>(`/consumption/daily?start=${start}&end=${end}`),
+    api<WeeklyCalendarEntry[]>(`/consumption?start=${start}&end=${end}`),
+  ]);
+  dailyEntries = daily;
+  weeklyEntries = weekly;
   renderCalendar();
 }
 
 function selectCalendarDate(date: string): void {
   selectedDate = date;
+  selectedWeekStart = mondayOfLocal(date);
   const existing = dailyEntries.find((entry) => entry.date === date);
+  const weekly = weeklyEntries.find((entry) => entry.weekStart === selectedWeekStart);
   setText("dailyEntryTitle", `Reading for ${new Date(`${date}T00:00:00`).toLocaleDateString(undefined, { weekday: "long", month: "long", day: "numeric", year: "numeric" })}`);
   ($("dailyUnits") as HTMLInputElement).value = existing ? String(existing.reading) : "";
   ($("dailyReadingType") as HTMLSelectElement).value = existing?.readingType ?? "auto";
@@ -157,9 +169,21 @@ function selectCalendarDate(date: string): void {
     : "No reading saved for this date yet.";
   $("dailyDelete").hidden = !existing;
   $("dailyEntryError").textContent = "";
+  setText("weeklyEntryLabel", `Weekly total for week starting ${selectedWeekStart} (kWh)`);
+  ($("weeklyEntryUnits") as HTMLInputElement).value = weekly ? String(weekly.units) : "";
+  $("weeklyEntryDelete").hidden = !weekly;
+  setText("weeklyEntryStatus", weekly ? `Saved weekly total: ${weekly.units} kWh${weekly.billAmount === null ? "" : ` · bill ${weekly.billAmount} SAR`}` : "No weekly total saved for this week.");
+  $("weeklyEntryError").textContent = "";
   $("dailyEntry").hidden = false;
   renderCalendar();
   ($("dailyUnits") as HTMLInputElement).focus();
+}
+
+function mondayOfLocal(date: string): string {
+  const value = new Date(`${date}T00:00:00`);
+  const day = value.getDay();
+  value.setDate(value.getDate() + (day === 0 ? -6 : 1 - day));
+  return `${value.getFullYear()}-${String(value.getMonth() + 1).padStart(2, "0")}-${String(value.getDate()).padStart(2, "0")}`;
 }
 
 async function saveDailyEntry(units: number): Promise<void> {
@@ -167,6 +191,7 @@ async function saveDailyEntry(units: number): Promise<void> {
   const date = selectedDate;
   await api(`/consumption/daily/${date}`, { method: "PUT", body: { units, readingType: ($("dailyReadingType") as HTMLSelectElement).value } });
   await loadDailyEntries();
+  await loadDashboard();
   selectCalendarDate(date);
 }
 
@@ -181,6 +206,36 @@ function updateReadingModeHelp(): void {
 }
 
 $("dailyReadingType").addEventListener("change", updateReadingModeHelp);
+
+$("weeklyEntryForm").addEventListener("submit", async (event) => {
+  event.preventDefault();
+  if (!selectedDate || !selectedWeekStart) return;
+  const save = $("weeklyEntrySave") as HTMLButtonElement;
+  save.disabled = true;
+  $("weeklyEntryError").textContent = "";
+  const date = selectedDate;
+  const exists = weeklyEntries.some((entry) => entry.weekStart === selectedWeekStart);
+  try {
+    const units = Number(($("weeklyEntryUnits") as HTMLInputElement).value);
+    if (exists) await api(`/consumption/${selectedWeekStart}`, { method: "PUT", body: { units } });
+    else await api("/consumption", { method: "POST", body: { date: selectedWeekStart, units } });
+    await loadDailyEntries();
+    await loadDashboard();
+    selectCalendarDate(date);
+  } catch (error) { setText("weeklyEntryError", error instanceof Error ? error.message : "Could not save weekly total"); }
+  finally { save.disabled = false; }
+});
+
+$("weeklyEntryDelete").addEventListener("click", async () => {
+  if (!selectedDate || !selectedWeekStart || !window.confirm(`Delete the weekly total for the week starting ${selectedWeekStart}?`)) return;
+  const date = selectedDate;
+  try {
+    await api(`/consumption/${selectedWeekStart}`, { method: "DELETE" });
+    await loadDailyEntries();
+    await loadDashboard();
+    selectCalendarDate(date);
+  } catch (error) { setText("weeklyEntryError", error instanceof Error ? error.message : "Could not delete weekly total"); }
+});
 
 $("calendarPrevious").addEventListener("click", () => { calendarCursor.setMonth(calendarCursor.getMonth() - 1); selectedDate = null; $("dailyEntry").hidden = true; void loadDailyEntries().catch(showCalendarError); });
 $("calendarNext").addEventListener("click", () => { calendarCursor.setMonth(calendarCursor.getMonth() + 1); selectedDate = null; $("dailyEntry").hidden = true; void loadDailyEntries().catch(showCalendarError); });
@@ -199,6 +254,7 @@ $("dailyDelete").addEventListener("click", async () => {
   try {
     await api(`/consumption/daily/${date}`, { method: "DELETE" });
     await loadDailyEntries();
+    await loadDashboard();
     selectCalendarDate(date);
   } catch (error) { setText("dailyEntryError", error instanceof Error ? error.message : "Could not delete daily reading"); }
 });
