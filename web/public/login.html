@@ -1,33 +1,91 @@
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
   <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="viewport"
+        content="width=device-width, initial-scale=1">
+
   <title>Login – Senior Project II</title>
+
+  <script>
+    const saved = localStorage.getItem("theme");
+    const prefersDark = matchMedia(
+      "(prefers-color-scheme: dark)"
+    ).matches;
+
+    document.documentElement.dataset.theme =
+      saved === "light" || saved === "dark"
+        ? saved
+        : (prefersDark ? "dark" : "light");
+  </script>
+
   <link rel="stylesheet" href="style.css">
 </head>
+
 <body>
-  <main>
-    <h1>Login</h1>
+  <main class="auth-page">
 
-    <form class="auth-form" id="loginForm">
-      <label for="email">Email</label>
-      <input type="email" id="email" autocomplete="email" required>
+    <!-- Theme button outside glass frame -->
+    <nav class="auth-buttons">
+      <button id="themeToggle" type="button">
+        🌙 Dark Mode
+      </button>
+    </nav>
 
-      <label for="password">Password</label>
-      <input type="password" id="password" autocomplete="current-password" required>
+    <!-- Transparent glass frame -->
+    <div class="auth-frame">
 
-      <p class="error" id="formError" role="alert"></p>
-      <button type="submit" class="btn btn-solid">Login</button>
-    </form>
+      <h1>Login</h1>
 
-    <p class="tag">No account yet? <a href="register.html">Register</a></p>
-    <p class="tag"><a href="index.html">← Back to home</a></p>
+      <form class="auth-form" id="loginForm">
+
+        <label for="email">Email</label>
+        <input
+          type="email"
+          id="email"
+          autocomplete="email"
+          required
+        >
+
+        <label for="password">Password</label>
+        <input
+          type="password"
+          id="password"
+          autocomplete="current-password"
+          required
+        >
+
+        <p class="error"
+           id="formError"
+           role="alert"></p>
+
+        <button type="submit" class="btn btn-solid">
+          Login
+        </button>
+
+      </form>
+
+      <p class="tag">
+        No account yet?
+        <a href="register.html">Register</a>
+      </p>
+
+      <p class="tag">
+        <a href="index.html">← Back to home</a>
+      </p>
+
+    </div>
   </main>
+
   <script type="module">
     import { getToken } from "./js/api.js";
-    if (getToken()) location.replace("dashboard.html");
+    if (getToken()) {
+      location.replace("dashboard.html");
+    }
   </script>
+
   <script type="module" src="js/auth.js"></script>
+  <script src="theme.js"></script>
 </body>
 </html>

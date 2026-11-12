@@ -25,14 +25,26 @@ Pages:
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Sora:wght@300;400;600;700&display=swap" rel="stylesheet">
+  <script>
+  const saved = localStorage.getItem("theme");
+  const prefersDark = matchMedia(
+    "(prefers-color-scheme: dark)"
+  ).matches;
+
+  document.documentElement.dataset.theme =
+    saved || (prefersDark ? "dark" : "light");
+</script>
   <link rel="stylesheet" href="style.css">
 </head>
 
-<body>
+<body class="home-page">
   <main>
     <nav class="auth-buttons">
       <a href="login.html" class="btn btn-outline">Login</a>
       <a href="register.html" class="btn btn-solid">Register</a>
+            <button id="themeToggle" type="button">
+          🌙 Dark Mode
+      </button>
     </nav>
 
     <!-- LOGO: a circle, four bars (consumption) and a lightning bolt (electricity). -->
@@ -59,5 +71,6 @@ Pages:
   <footer>© <span id="year"></span> Senior Project II – in development</footer>
 
   <script type="module" src="js/home.js"></script>
+  <script src="theme.js"></script>
 </body>
 </html>

@@ -1,305 +1,222 @@
-/* ==========================================================
-   1. COLORS AND SETTINGS
-   Colors are stored as variables, so you can change them
-   in one place and the whole page updates.
-   ========================================================== */
+/* Senior Project II — consolidated responsive stylesheet */
 :root {
   box-sizing: border-box;
-
-  /* Keeps content away from phone notches and system bars */
-  padding-top: env(safe-area-inset-top, 0px);
-  padding-bottom: env(safe-area-inset-bottom, 0px);
-
-  --bg: #d5d7da;      /* page background (grey) */
-  --ink: #22262b;     /* main text and logo color */
-  --muted: #555b63;   /* softer text color */
-  --line: #b4b8bd;    /* thin lines above the features */
-  --accent: #f2a900;  /* yellow of the lightning bolt */
-  --danger: #b3261e;  /* error and alert text */
+  --bg: #ffffff;
+  --ink: #22262b;
+  --text: #22262b;
+  --muted: #555b63;
+  --line: #b4b8bd;
+  --border: #555b63;
+  --accent: #f2a900;
+  --danger: #b3261e;
   --chart: #f2a900;
-  --surface: #f5f6f7;
+  --surface: #f5f6f8;
+  --logo: url("./assets/logo_light.svg");
+  color-scheme: light;
 }
-
-/* If the visitor's device uses dark mode, switch to a darker grey */
-@media (prefers-color-scheme: dark) {
-  :root:not([data-theme="light"]) {
-    --bg: #3a3d42;
-    --ink: #f1f2f3;
-    --muted: #b9bdc3;
-    --line: #555a61;
-    --danger: #ff8a80;
-    --surface: #303338;
-  }
+html[data-theme="dark"] {
+  --bg: #1c2028;
+  --ink: #f1f2f3;
+  --text: #f1f2f3;
+  --muted: #b9bdc3;
+  --line: #555a61;
+  --border: #dddddd;
+  --danger: #ff8a80;
+  --surface: #2d333e;
+  --logo: url("./assets/logo_dark.svg");
+  color-scheme: dark;
 }
-
-/* Make every element include padding and border in its width */
-*, *::before, *::after {
-  box-sizing: inherit;
-}
-
-/* ==========================================================
-   2. PAGE LAYOUT
-   ========================================================== */
+*, *::before, *::after { box-sizing: border-box; }
+html { min-height: 100%; }
 body {
   margin: 0;
-  min-height: 100vh;
-  background: var(--bg);
-  color: var(--ink);
+  min-height: 100dvh;
+  background-color: var(--bg);
+  color: var(--text);
   font-family: 'Sora', system-ui, -apple-system, 'Segoe UI', Arial, sans-serif;
-
   display: flex;
   flex-direction: column;
   align-items: center;
   justify-content: center;
-
   padding: 48px 24px;
   text-align: center;
+  transition: background-color .3s, color .3s;
 }
-
-main {
-  width: 100%;
-  max-width: 760px;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
+/* Background image tracks the button-controlled data-theme; never appears on Home. */
+body:not(.home-page)::before {
+  content: "";
+  position: fixed;
+  inset: 0;
+  background: var(--logo) center / min(350px, 65vw) no-repeat;
+  opacity: .15;
+  pointer-events: none;
+  z-index: 0;
 }
-
-/* ==========================================================
-   3. LOGO
-   ========================================================== */
-.logo {
-  width: clamp(150px, 28vw, 210px);
-  height: auto;
-  cursor: pointer;
-}
-
-.logo .bar {
-  transform-origin: 50% 100%;
-  animation: grow 0.9s cubic-bezier(0.2, 0.8, 0.2, 1) both;
-}
-
-.logo .bar:nth-of-type(2) { animation-delay: 0.1s; }
-.logo .bar:nth-of-type(3) { animation-delay: 0.2s; }
-.logo .bar:nth-of-type(4) { animation-delay: 0.3s; }
-
-@keyframes grow {
-  from { transform: scaleY(0); }
-  to   { transform: scaleY(1); }
-}
-
-@media (prefers-reduced-motion: reduce) {
-  .logo .bar { animation: none; }
-}
-
-/* ==========================================================
-   4. TEXT
-   ========================================================== */
-h1 {
-  margin: 28px 0 10px;
-  font-size: clamp(2rem, 6vw, 3rem);
-  font-weight: 700;
-  letter-spacing: -0.02em;
-}
-
-.tag {
-  margin: 0;
-  font-size: clamp(1rem, 2.4vw, 1.2rem);
-  font-weight: 300;
-  color: var(--muted);
-  max-width: 34em;
-  line-height: 1.6;
-}
-
-/* ==========================================================
-   5. FEATURES LIST (home page)
-   ========================================================== */
-.features {
-  list-style: none;
-  margin: 44px 0 0;
-  padding: 0;
-  display: flex;
-  flex-wrap: wrap;
-  justify-content: center;
-  gap: 12px 40px;
-  width: 100%;
-}
-
-.features li {
-  flex: 1 1 200px;
-  max-width: 230px;
-  padding-top: 14px;
-  border-top: 2px solid var(--line);
-}
-
-.features li strong {
-  display: block;
-  font-size: 1rem;
-  font-weight: 600;
-  margin-bottom: 6px;
-}
-
-.features li span {
-  font-size: 0.9rem;
-  line-height: 1.55;
-  color: var(--muted);
-}
-
-/* ==========================================================
-   6. FOOTER
-   ========================================================== */
-footer {
-  margin-top: 56px;
-  font-size: 0.85rem;
-  color: var(--muted);
-}
-
-/* ==========================================================
-   7. LOGIN / REGISTER BUTTONS
-   ========================================================== */
-.auth-buttons {
-  position: absolute;
-  top: calc(20px + env(safe-area-inset-top, 0px));
-  right: 24px;
-  display: flex;
-  gap: 10px;
-}
-
-.btn {
-  min-height: 44px;
-  padding: 10px 22px;
-  border-radius: 8px;
-  border: 2px solid var(--ink);
-  font-family: inherit;
-  font-size: 0.9rem;
-  font-weight: 600;
-  text-decoration: none;
-  cursor: pointer;
-  transition: opacity 0.2s;
-}
-
+body.home-page::before { content: none; }
+main { width: 100%; max-width: 760px; display: flex; flex-direction: column; align-items: center; position: relative; z-index: 1; }
+.logo { width: clamp(150px, 28vw, 210px); height: auto; cursor: pointer; }
+.logo .bar { transform-origin: 50% 100%; animation: grow .9s cubic-bezier(.2,.8,.2,1) both; }
+.logo .bar:nth-of-type(2) { animation-delay: .1s; }
+.logo .bar:nth-of-type(3) { animation-delay: .2s; }
+.logo .bar:nth-of-type(4) { animation-delay: .3s; }
+@keyframes grow { from { transform: scaleY(0); } to { transform: scaleY(1); } }
+@media (prefers-reduced-motion: reduce) { .logo .bar { animation: none; } }
+h1 { margin: 28px 0 10px; font-size: clamp(2rem, 6vw, 3rem); font-weight: 700; letter-spacing: -.02em; }
+.tag { margin: 0; font-size: clamp(1rem, 2.4vw, 1.2rem); font-weight: 300; color: var(--muted); max-width: 34em; line-height: 1.6; }
+a { color: inherit; }
+.features { list-style: none; margin: 44px 0 0; padding: 0; display: flex; flex-wrap: wrap; justify-content: center; gap: 12px 40px; width: 100%; }
+.features li { flex: 1 1 200px; max-width: 230px; padding-top: 14px; border-top: 2px solid var(--line); }
+.features li strong { display: block; font-size: 1rem; font-weight: 600; margin-bottom: 6px; }
+.features li span { font-size: .9rem; line-height: 1.55; color: var(--muted); }
+footer { margin-top: 56px; font-size: .85rem; color: var(--muted); }
+/* Header actions: toggle is in the same flex row as Login/Register, not fixed over them. */
+.auth-buttons { position: absolute; top: calc(20px + env(safe-area-inset-top, 0px)); right: 24px; display: flex; align-items: center; justify-content: flex-end; flex-wrap: wrap; gap: 10px; z-index: 10; }
+#themeToggle { position: static; display: inline-flex; align-items: center; justify-content: center; gap: 8px; min-height: 44px; padding: 10px 16px; border-radius: 10px; border: 1px solid var(--border); background: var(--surface); color: var(--text); font: inherit; font-size: 14px; white-space: nowrap; cursor: pointer; transition: background-color .3s, color .3s; }
+#themeToggle:hover { opacity: .85; }
+.btn { min-height: 44px; padding: 10px 22px; border-radius: 8px; border: 2px solid var(--ink); font-family: inherit; font-size: .9rem; font-weight: 600; text-decoration: none; cursor: pointer; transition: opacity .2s; }
 .btn-outline { background: transparent; color: var(--ink); }
-.btn-solid   { background: var(--ink); color: var(--bg); }
-.btn:hover   { opacity: 0.8; }
-
-.btn:focus-visible {
-  outline: 3px solid var(--accent);
-  outline-offset: 2px;
-}
-
-/* ==========================================================
-   8. FORMS (login, register, data entry)
-   ========================================================== */
-.auth-form {
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
-  width: 100%;
-  max-width: 340px;
-  margin: 24px 0 16px;
-  text-align: left;
-}
-
-.auth-form label { font-size: 0.9rem; font-weight: 600; }
-
-.auth-form input {
-  min-height: 44px;
-  padding: 10px 12px;
-  border-radius: 8px;
-  border: 2px solid var(--line);
-  background: transparent;
-  color: var(--ink);
-  font-family: inherit;
-  font-size: 1rem;
-}
-
-.auth-form input:focus-visible { outline: 3px solid var(--accent); outline-offset: 1px; }
+.btn-solid { background: var(--ink); color: var(--bg); }
+.btn:hover { opacity: .8; }
+:focus-visible { outline: 3px solid var(--accent); outline-offset: 2px; }
+/* Forms used on auth pages AND dashboard entry controls. */
+.auth-form { display: flex; flex-direction: column; gap: 8px; width: 100%; max-width: 340px; margin: 24px 0 16px; text-align: left; }
+.auth-form label { font-size: .9rem; font-weight: 600; }
+.auth-form input { min-height: 44px; padding: 10px 12px; border-radius: 8px; border: 2px solid var(--line); background: transparent; color: var(--ink); font-family: inherit; font-size: 1rem; }
 .auth-form .btn { margin-top: 12px; }
-
-.error { min-height: 1.4em; margin: 0; font-size: 0.9rem; color: var(--danger); }
-
-/* ==========================================================
-   9. DASHBOARD
-   ========================================================== */
+.error { min-height: 1.4em; margin: 0; font-size: .9rem; color: var(--danger); }
+/* Dashboard remains scrollable when content needs space. */
 .dashboard { max-width: 900px; align-items: stretch; text-align: left; gap: 24px; }
-
-body.protected-page { justify-content: flex-start; }
-
-.dash-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-}
+.dash-header { display: flex; justify-content: space-between; align-items: center; }
 .dash-header h1 { margin: 0; font-size: 1.8rem; }
-.eyebrow { margin: 0 0 4px; color: var(--muted); font-size: .72rem; font-weight: 700; letter-spacing: .14em; }
-.page-nav { display: flex; gap: 8px; overflow-x: auto; border-bottom: 1px solid var(--line); padding-bottom: 8px; }
-.page-nav a { padding: 10px 14px; color: var(--muted); border-radius: 8px; text-decoration: none; font-weight: 600; white-space: nowrap; }
-.page-nav a:hover, .page-nav a.active { background: var(--surface); color: var(--ink); }
-.text-link { display: inline-block; margin-top: 12px; color: var(--ink); font-weight: 600; text-decoration-color: var(--accent); text-underline-offset: 4px; }
-.summary-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 16px; }
-.summary-grid p { display: flex; flex-direction: column; gap: 6px; }
-.quick-links { display: flex; flex-wrap: wrap; gap: 10px; }
-.quick-links a { padding: 12px 16px; color: var(--ink); border: 1px solid var(--line); border-radius: 8px; text-decoration: none; }
-.calendar-heading { display: flex; justify-content: space-between; align-items: center; gap: 12px; }
-.calendar-heading h2 { margin: 0; }
-.calendar-heading .btn { min-width: 42px; padding: 6px 12px; }
-.calendar-weekdays, .calendar-grid { display: grid; grid-template-columns: repeat(7, minmax(0, 1fr)); gap: 6px; }
-.calendar-weekdays { margin: 18px 0 6px; text-align: center; color: var(--muted); font-size: .78rem; font-weight: 700; }
-.calendar-day { min-height: 46px; border: 1px solid var(--line); border-radius: 8px; background: transparent; color: var(--ink); font: inherit; cursor: pointer; }
-.calendar-day:hover { border-color: var(--accent); }
-.calendar-day.has-reading { background: color-mix(in srgb, var(--accent) 30%, var(--surface)); border-color: var(--accent); font-weight: 700; }
-.calendar-key { display: flex; align-items: center; gap: 8px; font-size: .86rem; }
-.reading-dot { width: 12px; height: 12px; display: inline-block; border-radius: 50%; background: var(--accent); }
-.weekly-reading-dot { width: 12px; height: 12px; display: inline-block; border-radius: 50%; background: #4d8cc9; }
-.calendar-day.has-weekly { box-shadow: inset 0 -4px #4d8cc9; }
-.entry-form { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); align-items: end; max-width: none; }
-.entry-form > div { display: flex; flex-direction: column; gap: 6px; }
-.entry-form input { width: 100%; }
-.entry-form select { min-height: 44px; width: 100%; padding: 10px 12px; border-radius: 8px; border: 2px solid var(--line); background: var(--surface); color: var(--ink); font: inherit; }
-.daily-entry { margin-top: 20px; padding: 16px; border: 1px solid var(--line); border-radius: 10px; background: var(--surface); }
-.daily-entry h3 { margin: 0; font-size: 1rem; }
-.weekly-entry-form { margin: 12px 0; }
-.tariff-options { display: grid; gap: 10px; border: 1px solid var(--line); border-radius: 8px; padding: 14px; }
-.tariff-options label { line-height: 1.45; }
-.tariff-options input[type="radio"] { min-height: auto; width: auto; margin-right: 6px; }
-canvas { max-height: 340px; }
-
-.card {
-  border: 2px solid var(--line);
-  border-radius: 12px;
-  padding: 20px;
-}
+.card { border: 2px solid var(--line); border-radius: 12px; padding: 20px; }
 .card h2 { margin: 0 0 12px; font-size: 1.1rem; }
-.card p  { margin: 4px 0; color: var(--muted); }
+.card p { margin: 4px 0; color: var(--muted); }
 .card .value { color: var(--ink); font-weight: 600; }
-
 .entry-row { display: flex; flex-wrap: wrap; gap: 12px; align-items: flex-end; }
 .entry-row .auth-form { flex-direction: row; flex-wrap: wrap; align-items: flex-end; max-width: none; margin: 0; }
-
-.alert-box {
-  border: 2px solid var(--danger);
-  color: var(--danger);
-  border-radius: 12px;
-  padding: 14px 18px;
-  font-weight: 600;
-}
-
+.alert-box { border: 2px solid var(--danger); color: var(--danger); border-radius: 12px; padding: 14px 18px; font-weight: 600; }
 .tips { margin: 0; padding-left: 20px; color: var(--muted); line-height: 1.6; }
-
 button:disabled { opacity: .55; cursor: wait; }
 .table-wrap { max-width: 100%; overflow-x: auto; }
 table { width: 100%; border-collapse: collapse; }
 th, td { text-align: left; padding: 8px; border-bottom: 1px solid var(--line); }
 td .btn { padding: 8px 12px; }
-:focus-visible { outline: 3px solid var(--accent); outline-offset: 2px; }
-@media (max-width: 480px) {
+/* Auth pages: centered, viewport-height layout on normal screens. */
+body:has(.auth-page) { height: 100dvh; min-height: 0; padding: 0; overflow: hidden; }
+.auth-page { width: 100%; max-width: none; height: 100dvh; min-height: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; padding: calc(68px + env(safe-area-inset-top, 0px)) 20px calc(16px + env(safe-area-inset-bottom, 0px)); position: relative; z-index: 1; }
+/* Theme toggle on auth pages sits above the glass panel. */
+.auth-page .auth-buttons { position: absolute; top: calc(12px + env(safe-area-inset-top, 0px)); right: 20px; width: auto; max-width: none; margin: 0; }
+.auth-frame { width: 100%; max-width: 460px; padding: clamp(16px, 3vh, 30px) 30px; border-radius: 20px; background: rgba(255,255,255,.20); border: 2px solid #222; box-shadow: 0 8px 32px rgba(0,0,0,.10); backdrop-filter: blur(3px); -webkit-backdrop-filter: blur(3px); color: var(--text); transition: background-color .3s, border-color .3s, box-shadow .3s; }
+html[data-theme="dark"] .auth-frame { background: rgba(25,30,40,.20); border-color: rgba(255,255,255,.85); box-shadow: 0 8px 32px rgba(0,0,0,.30); }
+.auth-frame h1 { margin: 0 0 14px; text-align: center; font-size: clamp(1.75rem, 4vh, 2.5rem); }
+.auth-frame .auth-form { width: 100%; max-width: none; margin: 12px 0; gap: 6px; }
+.auth-frame .auth-form label { display: block; margin: 0; font-weight: 600; color: var(--text); }
+.auth-frame .auth-form input { width: 100%; min-height: 40px; padding: 8px 12px; border: 2px solid #222; border-radius: 8px; background: rgba(255,255,255,.35); color: #111; transition: border-color .3s, background-color .3s, box-shadow .3s; }
+html[data-theme="dark"] .auth-frame .auth-form input { border-color: #ddd; background: rgba(30,35,45,.35); color: #fff; }
+.auth-frame input::placeholder { color: #666; }
+html[data-theme="dark"] .auth-frame input::placeholder { color: #bbb; }
+.auth-frame .auth-form input:focus { border-color: #e69500; box-shadow: 0 0 0 3px rgba(245,166,35,.25); outline: none; }
+html[data-theme="dark"] .auth-frame .auth-form input:focus { border-color: #ffb733; }
+.auth-frame .auth-form .btn { margin-top: 6px; }
+.auth-frame .tag { text-align: center; margin: 8px auto 0; font-size: .95rem; }
+/* If a short viewport cannot fit the form, scrolling is safer than hiding fields. */
+@media (max-height: 680px) {
+  body:has(.auth-page) { height: auto; min-height: 100dvh; overflow-y: auto; overflow-x: hidden; }
+  .auth-page { height: auto; min-height: 100dvh; padding-top: 70px; padding-bottom: 16px; }
+  .auth-frame { padding: 14px 22px; }
+  .auth-frame h1 { margin-bottom: 8px; }
+  .auth-frame .auth-form { margin: 8px 0; gap: 4px; }
+  .auth-frame .auth-form input { min-height: 38px; padding: 7px 10px; }
+}
+@media (max-width: 600px) {
   body { padding: 24px 12px; }
+  .auth-buttons { right: 12px; top: calc(12px + env(safe-area-inset-top, 0px)); }
+  #themeToggle { padding: 8px 12px; }
+  .auth-page { padding-left: 15px; padding-right: 15px; }
+  .auth-page .auth-buttons { right: 15px; }
+  .auth-frame { padding-left: 20px; padding-right: 20px; border-radius: 16px; }
   .dashboard { gap: 14px; }
   .card { padding: 14px; }
   .entry-row .auth-form { flex-direction: column; align-items: stretch; }
   .entry-row .auth-form > div, .entry-row input { width: 100%; }
   .dash-header h1 { font-size: 1.5rem; }
-  .page-nav { margin-right: -4px; }
-  .calendar-heading { align-items: flex-start; flex-direction: column; }
-  .calendar-weekdays, .calendar-grid { gap: 3px; }
-  .calendar-day { min-height: 40px; }
+}
+
+
+/* =====================================
+   HOME PAGE - BUTTON POSITION FIX
+===================================== */
+
+/* Keep Home navigation in top-right corner */
+body.home-page .auth-buttons {
+  position: fixed !important;
+  top: 20px;
+  right: 24px;
+  left: auto;
+  bottom: auto;
+
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 12px;
+
+  width: auto;
+  max-width: none;
+  margin: 0;
+
+  z-index: 9999;
+}
+
+/* Theme button stays beside Login/Register */
+body.home-page #themeToggle {
+  position: static !important;
+  margin: 0;
+}
+
+/* Mobile screens */
+@media (max-width: 600px) {
+  body.home-page .auth-buttons {
+    top: 12px;
+    right: 12px;
+    gap: 8px;
+  }
+}
+
+
+/* =====================================
+   HOME PAGE THEME BUTTON BORDER
+===================================== */
+
+/* Light Mode - Black border */
+html[data-theme="light"] body.home-page #themeToggle {
+  border: 2px solid #000000;
+  background: rgba(255, 255, 255, 0.35);
+  color: #222222;
+  border-radius: 8px;
+}
+
+/* Dark Mode - White border */
+html[data-theme="dark"] body.home-page #themeToggle {
+  border: 2px solid #ffffff;
+  background: rgba(30, 35, 45, 0.35);
+  color: #ffffff;
+  border-radius: 8px;
+}
+
+/* Smooth theme transition */
+body.home-page #themeToggle {
+  padding: 10px 16px;
+  cursor: pointer;
+
+  transition:
+    border-color 0.3s ease,
+    background-color 0.3s ease,
+    color 0.3s ease;
+}
+
+/* Orange highlight when focused */
+body.home-page #themeToggle:focus-visible {
+  outline: 3px solid #f2a900;
+  outline-offset: 3px;
 }

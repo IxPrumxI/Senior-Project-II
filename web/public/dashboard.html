@@ -3,119 +3,116 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>Electricity dashboard</title>
+  <title>Dashboard – Senior Project II</title>
+  <script>
+  const saved = localStorage.getItem("theme");
+  const prefersDark = matchMedia(
+    "(prefers-color-scheme: dark)"
+  ).matches;
+
+  document.documentElement.dataset.theme =
+    saved || (prefersDark ? "dark" : "light");
+</script>
   <link rel="stylesheet" href="style.css">
-  <script src="vendor/chart.umd.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4"></script>
 </head>
 <body class="protected-page" hidden>
   <main class="dashboard">
-    <header class="dash-header">
-      <div><p class="eyebrow">SMART ELECTRICITY</p><h1 id="pageTitle">Overview</h1></div>
+    <div class="dash-header">
+      <h1>Dashboard</h1>
+      <button id="themeToggle" type="button">🌙 Dark Mode</button>
       <button class="btn btn-outline" id="logout" type="button">Log out</button>
-    </header>
-
-    <nav class="page-nav" aria-label="Dashboard pages">
-      <a href="dashboard.html?page=overview" data-page-link="overview">Overview</a>
-      <a href="dashboard.html?page=usage" data-page-link="usage">Usage & calendar</a>
-      <a href="dashboard.html?page=insights" data-page-link="insights">Insights</a>
-      <a href="dashboard.html?page=settings" data-page-link="settings">Settings</a>
-    </nav>
+    </div>
 
     <div class="alert-box" id="alert" role="alert" hidden></div>
     <p class="error" id="loadError" role="alert" hidden>Dashboard data could not be loaded. Refresh to retry.</p>
 
-    <section class="card" id="summaryCard" data-page-section="summaryCard">
-      <h2>Your usage at a glance</h2>
-      <div class="summary-grid">
-        <p>Average per week<strong class="value" id="avg">–</strong></p>
-        <p>This week vs last week<strong class="value" id="compare">–</strong></p>
-      </div>
-      <a class="text-link" href="dashboard.html?page=usage">Enter or review usage →</a>
-    </section>
-
-    <section class="card" id="overviewCharts" data-page-section="overviewCharts">
-      <h2>Weekly usage</h2>
-      <canvas id="weeklyChart" aria-label="Weekly electricity usage chart" role="img"></canvas>
-      <a class="text-link" href="dashboard.html?page=insights">View monthly trends →</a>
-    </section>
-
-    <section class="card" id="tipsCard" data-page-section="tipsCard">
-      <h2>Suggestions based on your readings</h2><ul class="tips" id="tips"></ul>
-    </section>
-
-    <section class="card" id="overviewLinks" data-page-section="overviewLinks">
-      <h2>Explore your account</h2>
-      <div class="quick-links"><a href="dashboard.html?page=usage">Add a reading</a><a href="dashboard.html?page=insights">See insights</a><a href="dashboard.html?page=settings">Billing cycle settings</a></div>
-    </section>
-
-    <section class="card" id="calendarCard" data-page-section="calendarCard">
-      <div class="calendar-heading"><h2>Consumption calendar</h2><div><button class="btn btn-outline" id="calendarPrevious" type="button" aria-label="Previous month">‹</button> <strong id="calendarMonth"></strong> <button class="btn btn-outline" id="calendarNext" type="button" aria-label="Next month">›</button></div></div>
-      <p>Existing weekly totals appear on their Monday. Select any date to add or edit its daily reading and the total for its week.</p>
-      <div class="calendar-weekdays" aria-hidden="true"><span>Sun</span><span>Mon</span><span>Tue</span><span>Wed</span><span>Thu</span><span>Fri</span><span>Sat</span></div>
-      <div class="calendar-grid" id="calendarGrid"></div>
-      <p class="calendar-key"><span class="reading-dot"></span> Date has a saved reading</p>
-      <p class="calendar-key"><span class="weekly-reading-dot"></span> Week has a saved weekly total</p>
-      <section class="daily-entry" id="dailyEntry" hidden aria-live="polite">
-        <div class="calendar-heading"><h3 id="dailyEntryTitle">Daily reading</h3><button class="btn btn-outline" id="dailyEntryClose" type="button">Close</button></div>
-        <p id="dailyExisting" hidden></p>
-        <form class="entry-form weekly-entry-form" id="weeklyEntryForm">
-          <div><label for="weeklyEntryUnits" id="weeklyEntryLabel">Weekly total</label><input type="number" id="weeklyEntryUnits" min="0" step="0.01" required></div>
-          <button class="btn btn-solid" id="weeklyEntrySave" type="submit">Save weekly total</button>
-          <button class="btn btn-outline" id="weeklyEntryDelete" type="button" hidden>Delete weekly total</button>
-        </form>
-        <p id="weeklyEntryStatus" role="status"></p>
-        <p class="error" id="weeklyEntryError" role="alert"></p>
-        <form class="entry-form" id="dailyEntryForm">
+    <section class="card">
+      <h2>Add weekly consumption</h2>
+      <div class="entry-row">
+        <form class="auth-form" id="entryForm">
           <div>
-            <label for="dailyReadingType">Reading type</label>
-            <select id="dailyReadingType"><option value="auto">Automatic</option><option value="daily_use">Usage for this day</option><option value="meter_total">Total meter reading</option></select>
+            <label for="date">Any date in the week</label><br>
+            <input type="date" id="date" required>
           </div>
-          <div><label for="dailyUnits" id="dailyUnitsLabel">Units used that day (kWh)</label><input type="number" id="dailyUnits" min="0" step="0.01" required></div>
-          <p id="dailyReadingHelp">Enter the electricity used on this date.</p>
-          <button class="btn btn-solid" id="dailySave" type="submit">Save reading</button>
-          <button class="btn btn-outline" id="dailyDelete" type="button" hidden>Delete reading</button>
+          <div>
+            <label for="units">Units used (kWh)</label><br>
+            <input type="number" id="units" min="0" step="0.01" required>
+          </div>
+          <button type="submit" class="btn btn-solid">Save</button>
         </form>
-        <p class="error" id="dailyEntryError" role="alert"></p>
-      </section>
-    </section>
-
-    <section class="card" id="historyCard" data-page-section="historyCard">
-      <h2>Weekly history</h2>
-      <p class="error" id="historyError" role="alert"></p>
-      <div class="table-wrap" role="region" aria-label="Weekly consumption history" tabindex="0">
-        <table><thead><tr><th>Week starting</th><th>kWh</th><th>Edit</th><th>Delete</th></tr></thead><tbody id="historyRows"></tbody></table>
       </div>
+      <p class="error" id="entryError" role="alert"></p>
     </section>
 
-    <section class="card" id="monthlyCard" data-page-section="monthlyCard">
-      <h2>Invoice-cycle usage</h2><p id="monthlyComparison">–</p><canvas id="monthlyChart" aria-label="Monthly electricity usage chart" role="img"></canvas><ul id="monthlyList"></ul>
-    </section>
-
-    <section class="card" id="predictionCard" data-page-section="predictionCard">
-      <h2>Next bill estimate</h2><button class="btn btn-solid" id="predictBtn" type="button">Predict next bill</button><p id="prediction" role="status"></p>
-    </section>
-
-    <section class="card" id="alertHistoryCard" data-page-section="alertHistoryCard"><h2>Alert history</h2><ul id="alertHistory"></ul></section>
-    <section class="card" id="predictionHistoryCard" data-page-section="predictionHistoryCard"><h2>Recent predictions</h2><ul id="predictionHistory"></ul></section>
-
-    <section class="card" id="settingsCard" data-page-section="settingsCard">
-      <h2>Account and billing</h2>
+    <section class="card">
+      <h2>Account settings</h2>
       <form class="auth-form" id="settingsForm">
-        <label for="fullName">Full name</label><input id="fullName" maxlength="100" required>
+        <label for="fullName">Full name</label>
+        <input id="fullName" maxlength="100" required>
         <fieldset class="tariff-options">
           <legend>Bill tariff</legend>
           <label><input type="radio" name="tariffMode" value="tiered" checked> Tiered: first 6,000 kWh at 0.18 SAR/kWh; above that at 0.30 SAR/kWh</label>
           <label><input type="radio" name="tariffMode" value="flat_override"> Use my flat rate instead</label>
-          <label for="pricePerKwh">Flat override (SAR/kWh)</label><input id="pricePerKwh" type="number" min="0.0001" max="5" step="0.0001" disabled>
+          <label for="pricePerKwh">Flat override (SAR/kWh)</label>
+          <input id="pricePerKwh" type="number" min="0.0001" max="5" step="0.0001" disabled>
         </fieldset>
-        <label for="invoiceDay">Invoice date each month</label>
-        <input id="invoiceDay" type="number" min="1" max="28" step="1" required aria-describedby="invoiceHelp">
-        <p id="invoiceHelp">Your monthly charts group weeks by the invoice cycle containing each Monday. Use a date from 1 to 28 so every month has that date.</p>
         <button class="btn btn-solid" id="settingsSave" type="submit">Save settings</button>
       </form>
       <p id="settingsMessage" role="status"></p>
     </section>
+
+    <section class="card">
+      <h2>Monthly usage</h2>
+      <p id="monthlyComparison">–</p>
+      <ul id="monthlyList"></ul>
+    </section>
+
+    <section class="card">
+      <h2>History</h2>
+      <p>Week starts Monday. The alert threshold is 20% above your average of earlier weeks.</p>
+      <div class="table-wrap" role="region" aria-label="Weekly consumption history" tabindex="0">
+        <table><thead><tr><th>Week</th><th>kWh</th><th>Edit</th><th>Delete</th></tr></thead><tbody id="historyRows"></tbody></table>
+      </div>
+    </section>
+
+    <section class="card">
+      <h2>Weekly usage</h2>
+      <canvas id="chart" aria-label="Weekly electricity usage chart" role="img"></canvas>
+    </section>
+
+    <section class="card">
+      <h2>Summary</h2>
+      <p>Average per week: <span class="value" id="avg">–</span></p>
+      <p>This week vs last week: <span class="value" id="compare">–</span></p>
+    </section>
+
+    <section class="card">
+      <h2>Next month's prediction</h2>
+      <button class="btn btn-solid" id="predictBtn" type="button">Predict next bill</button>
+      <p id="prediction"></p>
+    </section>
+
+    <section class="card">
+      <h2>Energy-saving tips</h2>
+      <ul class="tips" id="tips"></ul>
+    </section>
+
+    <section class="card">
+      <h2>Alert history</h2>
+      <ul id="alertHistory"></ul>
+    </section>
+
+    <section class="card">
+      <h2>Recent predictions</h2>
+      <ul id="predictionHistory"></ul>
+    </section>
   </main>
+  <script type="module">
+    import { getToken } from "./js/api.js";
+    if (!getToken()) location.replace("login.html"); else document.body.hidden = false;
+  </script>
   <script type="module" src="js/dashboard.js"></script>
+  <script src="theme.js"></script>
 </body>
 </html>

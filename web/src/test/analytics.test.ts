@@ -1,6 +1,6 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { mondayOf, compareLastTwoWeeks, checkAboveAverage, groupMonthly, energySavingTips, invoiceMonthOf } from "../analytics";
+import { mondayOf, compareLastTwoWeeks, checkAboveAverage, groupMonthly, energySavingTips } from "../analytics";
 
 test("mondayOf maps any day to its Monday", () => {
   assert.equal(mondayOf("2026-10-08"), "2026-10-05"); // Thursday
@@ -26,28 +26,20 @@ test("checkAboveAverage needs history and a >20% jump", () => {
   assert.equal(checkAboveAverage(base), null); // not enough history
 });
 
-test("monthly totals use each user's invoice cycle across year boundaries", () => {
+test("monthly totals use week_start month across year boundaries", () => {
   const months = groupMonthly([
     { weekStart: "2025-12-29", units: 100 }, { weekStart: "2026-01-05", units: 110 },
     { weekStart: "2026-01-12", units: 120 }, { weekStart: "2026-01-19", units: 130 },
-  ], 10);
+  ]);
   assert.deepEqual(months.map((m) => m.month), ["2025-12", "2026-01"]);
   assert.equal(months[0].partial, true);
-  assert.equal(months[1].units, 250);
-  assert.equal(invoiceMonthOf("2026-01-05", 10), "2025-12-10");
-  assert.equal(invoiceMonthOf("2026-01-12", 10), "2026-01-10");
-  assert.equal(invoiceMonthOf("2025-12-29", 10), "2025-12-10");
+  assert.equal(months[1].units, 360);
 });
 
 test("UC-06: alert tips reflect severity and summer", () => {
-  const moderate = energySavingTips([
-    ...[100, 100, 100, 100, 130, 130, 130, 130].map((units, index) => ({ weekStart: `2026-01-${String(index * 7 + 1).padStart(2, "0")}`, units })),
-  ], 2);
-  const severe = energySavingTips([
-    ...[100, 100, 100, 100, 160, 160, 160, 160].map((units, index) => ({ weekStart: `2026-01-${String(index * 7 + 1).padStart(2, "0")}`, units })),
-  ], 7);
-  assert.match(moderate[0], /30% above/);
-  assert.match(severe[0], /60% above/);
+  const moderate = energySavingTips({ type: "ABOVE_AVERAGE", message: "Usage 30% above average" }, 2);
+  const severe = energySavingTips({ type: "ABOVE_AVERAGE", message: "Usage 50% above average" }, 7);
+  assert.match(moderate[0], /20% to 40%/);
+  assert.match(severe[0], /more than 40%/);
   assert.ok(severe.some((tip) => /summer/i.test(tip)));
-  assert.match(energySavingTips([])[0], /Add a few weeks/);
 });

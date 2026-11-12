@@ -1,0 +1,9 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 256 256" role="img" aria-label="Lightning analytics logo dark theme">
+<title>Lightning analytics logo - dark theme</title>
+<circle cx="128" cy="128" r="108" fill="none" stroke="#F4F5F6" stroke-width="9"/>
+<rect x="64" y="151" width="19" height="36" rx="4" fill="#85878B"/>
+<rect x="93" y="137" width="19" height="50" rx="4" fill="#A3A5A8"/>
+<path d="M145 187 V143 L159 122 Q161 119 165 119 Q169 119 169 124 V183 Q169 187 165 187 Z" fill="#C7C9CC"/>
+<rect x="181" y="105" width="19" height="82" rx="4" fill="#F1F2F3"/>
+<path d="M133 61 L100 131 H130 L123 177 L163 108 H132 Z" fill="#FFB000"/>
+</svg>
