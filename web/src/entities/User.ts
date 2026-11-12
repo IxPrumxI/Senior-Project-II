@@ -11,5 +11,6 @@ export class User {
   @Column({ name: "tariff_mode", type: "enum", enum: ["tiered", "flat_override"], default: "tiered" }) tariffMode!: "tiered" | "flat_override";
   @Column({ name: "tier_limit_kwh", type: "decimal", precision: 10, scale: 2, default: 6000 }) tierLimitKwh!: number;
   @Column({ name: "high_rate_per_kwh", type: "decimal", precision: 6, scale: 4, default: 0.3 }) highRatePerKwh!: number;
+  @Column({ name: "invoice_day", type: "tinyint", unsigned: true, default: 1 }) invoiceDay!: number;
   @CreateDateColumn({ name: "created_at", type: "datetime" }) createdAt!: Date;
 }

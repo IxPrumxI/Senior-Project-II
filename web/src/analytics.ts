@@ -62,32 +62,53 @@ export function checkAboveAverage(records: WeekRecord[]): AlertResult | null {
   return null;
 }
 
-export function energySavingTips(alert: AlertResult | null, month = new Date().getUTCMonth() + 1): string[] {
-  const general = [
-    "Set air conditioners to 24°C or higher; each degree lower raises consumption noticeably.",
-    "Switch off lights and appliances in rooms nobody is using.",
-    "Unplug chargers and devices on standby.",
-  ];
-  const severe = alert && /\b([4-9]\d|\d{3,})% above/.test(alert.message);
-  const seasonal = month >= 6 && month <= 9 ? ["During the summer, set the air conditioner to 24°C or higher and keep doors and windows closed."] : [];
-  if (!alert) return [...seasonal, ...general];
-  return [...(severe ? ["Your usage is more than 40% above average. Check air conditioning, water heating, and other high-load appliances first."] : ["Your usage is 20% to 40% above average. Check which appliances ran more than usual this week."]), ...seasonal, ...general];
+export function energySavingTips(records: WeekRecord[], month = new Date().getUTCMonth() + 1): string[] {
+  if (!records.length) return ["Add a few weeks of readings to receive advice tailored to your usage."];
+  const tips: string[] = [];
+  const recent = records.slice(-4);
+  const baseline = records.slice(0, -4);
+  const recentAverage = average(recent.map((record) => record.units));
+  const baselineAverage = average(baseline.map((record) => record.units));
+
+  if (baseline.length >= 4 && baselineAverage > 0 && recentAverage > baselineAverage * 1.2) {
+    const increase = Math.round((recentAverage - baselineAverage) / baselineAverage * 100);
+    tips.push(`Your average weekly use over the last ${recent.length} weeks is ${increase}% above your earlier average. Check whether air conditioning or water heating has been running longer.`);
+  }
+
+  const highest = [...records].sort((a, b) => b.units - a.units)[0];
+  const typical = average(records.map((record) => record.units));
+  if (records.length >= 3 && highest.units > typical * 1.35) {
+    tips.push(`The week starting ${highest.weekStart} was your highest at ${highest.units} kWh. Compare your appliance use that week with a typical week to find what changed.`);
+  }
+
+  if (month >= 6 && month <= 9) tips.push("During the summer, set the air conditioner to 24°C or higher and keep doors and windows closed.");
+  tips.push("Switch off lights and appliances in rooms nobody is using.");
+  tips.push("Unplug chargers and devices on standby.");
+  return tips;
 }
 
 export interface MonthlyRecord { month: string; units: number; weeks: number; partial: boolean }
 
-/** Weeks belong to the calendar month containing their Monday week_start. */
-export function groupMonthly(records: WeekRecord[]): MonthlyRecord[] {
+/** Returns the invoice cycle with the given start date, formatted YYYY-MM-DD. */
+export function invoiceMonthOf(date: string, invoiceDay: number): string {
+  const day = Number(date.slice(8, 10));
+  const value = new Date(`${date}T00:00:00Z`);
+  if (Number.isNaN(value.getTime()) || !Number.isInteger(invoiceDay) || invoiceDay < 1 || invoiceDay > 28) throw new Error("Invalid invoice date");
+  if (day < invoiceDay) value.setUTCMonth(value.getUTCMonth() - 1);
+  return `${value.getUTCFullYear()}-${String(value.getUTCMonth() + 1).padStart(2, "0")}-${String(invoiceDay).padStart(2, "0")}`;
+}
+
+export function groupMonthly(records: WeekRecord[], invoiceDay = 1): MonthlyRecord[] {
   const groups = new Map<string, { units: number; weeks: number }>();
   for (const record of records) {
-    const month = record.weekStart.slice(0, 7);
+    const month = invoiceMonthOf(record.weekStart, invoiceDay);
     const value = groups.get(month) ?? { units: 0, weeks: 0 };
     value.units += record.units;
     value.weeks += 1;
     groups.set(month, value);
   }
   return [...groups].sort(([a], [b]) => a.localeCompare(b)).map(([month, value]) => ({
-    month, units: round2(value.units), weeks: value.weeks, partial: value.weeks < 4,
+    month: month.slice(0, 7), units: round2(value.units), weeks: value.weeks, partial: value.weeks < 4,
   }));
 }
 
