@@ -67,10 +67,21 @@ print(json.dumps({"email": sys.argv[1], "password": sys.argv[2]}, separators=(",
 PY
 )"
 
-login_response="$(curl --fail-with-body --silent --show-error \
-  --header 'Content-Type: application/json' \
-  --data "$login_body" \
-  "$API_BASE_URL/api/auth/login")"
+response_file="$(mktemp)"
+trap 'rm -f "$response_file"' EXIT
+login_status="$(
+  curl --silent --show-error \
+    --output "$response_file" \
+    --write-out '%{http_code}' \
+    --header 'Content-Type: application/json' \
+    --data "$login_body" \
+    "$API_BASE_URL/api/auth/login"
+)"
+login_response="$(cat "$response_file")"
+if [[ "$login_status" != 200 ]]; then
+  echo "Login failed with HTTP $login_status: $login_response" >&2
+  exit 1
+fi
 
 token="$(printf '%s' "$login_response" | python3 -c 'import json,sys; print(json.load(sys.stdin)["token"])')"
 
