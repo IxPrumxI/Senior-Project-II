@@ -7,6 +7,7 @@ import { insightsRouter } from "./routes/insights";
 import { AppDataSource } from "./data-source";
 
 export const app = express();
+app.set("trust proxy", 1);
 app.use(helmet());
 app.use(express.json({ limit: "10kb" }));
 let databaseReady: Promise<void> | null = null;

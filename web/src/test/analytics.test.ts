@@ -39,6 +39,16 @@ test("monthly totals use each user's invoice cycle across year boundaries", () =
   assert.equal(invoiceMonthOf("2025-12-29", 10), "2025-12-10");
 });
 
+test("four weeks starting on or after an invoice date stay in one invoice cycle", () => {
+  const months = groupMonthly([
+    { weekStart: "2024-09-30", units: 100 },
+    { weekStart: "2024-10-07", units: 100 },
+    { weekStart: "2024-10-14", units: 100 },
+    { weekStart: "2024-10-21", units: 100 },
+  ], 28);
+  assert.deepEqual(months, [{ month: "2024-09", units: 400, weeks: 4, partial: false }]);
+});
+
 test("UC-06: alert tips reflect severity and summer", () => {
   const moderate = energySavingTips([
     ...[100, 100, 100, 100, 130, 130, 130, 130].map((units, index) => ({ weekStart: `2026-01-${String(index * 7 + 1).padStart(2, "0")}`, units })),
